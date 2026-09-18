@@ -97,6 +97,57 @@
   .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
   .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
   #print-report { display: none; }
+
+  /* ---------- GitHub sync bar ---------- */
+  .github-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: -8px 0 24px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--paper-line);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .github-bar.connected { background: var(--income-bg); color: var(--income); }
+  .github-bar.error { background: var(--expense-bg); color: var(--expense); }
+  .github-bar .github-status { flex: 1 1 auto; }
+  .github-btn {
+    background: none;
+    border: 1px solid var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .github-bar.connected .github-btn { border-color: var(--income); color: var(--income); }
+  .github-btn:hover { background: var(--paper); }
+  .github-btn.link {
+    background: none;
+    border: none;
+    text-decoration: underline;
+    padding: 0;
+    font-weight: 400;
+  }
+  .github-connect-form { display: flex; align-items: center; gap: 8px; flex: 1 1 260px; }
+  .github-connect-form input {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 7px 9px;
+    border: 1px solid var(--ink-soft);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .github-connect-form input:focus { outline: none; border-color: var(--gold); }
   .app-footnote {
     max-width: 820px;
     margin: 30px auto 0;
@@ -920,6 +971,10 @@
       <button class="save-btn export-btn" onclick="exportPdf()">Export PDF</button>
       <span class="save-status" id="save-status"></span>
     </div>
+  </div>
+
+  <div class="github-bar" id="github-bar">
+    <span class="github-status" id="github-status">Checking GitHub connection…</span>
   </div>
 
   <div id="print-report"></div>
@@ -2692,11 +2747,172 @@
     return { addSubscription, removeRow, getState, setState, recalculate, getSummary };
   })();
 
+  /* ================= GitHub sync (namespaced) ================= */
+  const GithubSync = (function () {
+    const OWNER = 'afbrh';
+    const REPO = 'munny-data';
+    const PATH = 'data.json';
+    const BRANCH = 'main';
+    const TOKEN_KEY = 'munny_github_token';
+    let cachedSha = null;
+
+    function getToken() {
+      try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
+    }
+
+    function isConnected() {
+      return !!getToken();
+    }
+
+    function b64EncodeUnicode(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function b64DecodeUnicode(str) {
+      return decodeURIComponent(escape(atob(str.replace(/\n/g, ''))));
+    }
+
+    async function api(path, options) {
+      const token = getToken();
+      const headers = Object.assign({ 'Accept': 'application/vnd.github+json' }, (options && options.headers) || {});
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      return fetch('https://api.github.com' + path, Object.assign({}, options, { headers }));
+    }
+
+    async function load() {
+      const resp = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH + '?ref=' + BRANCH);
+      if (resp.status === 404) {
+        cachedSha = null;
+        return null;
+      }
+      if (resp.status === 401 || resp.status === 403) {
+        throw new Error('token rejected (' + resp.status + ')');
+      }
+      if (!resp.ok) {
+        throw new Error('HTTP ' + resp.status);
+      }
+      const json = await resp.json();
+      cachedSha = json.sha;
+      return JSON.parse(b64DecodeUnicode(json.content));
+    }
+
+    async function save(dataObj) {
+      const token = getToken();
+      if (!token) throw new Error('not connected');
+      const body = {
+        message: 'Update Munny data — ' + new Date().toISOString(),
+        content: b64EncodeUnicode(JSON.stringify(dataObj, null, 2)),
+        branch: BRANCH
+      };
+      if (cachedSha) body.sha = cachedSha;
+      const resp = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH, {
+        method: 'PUT',
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        throw new Error((errBody && errBody.message) || ('HTTP ' + resp.status));
+      }
+      const json = await resp.json();
+      cachedSha = json.content && json.content.sha;
+      return true;
+    }
+
+    function setStatus(message, success, isError) {
+      const bar = document.getElementById('github-bar');
+      if (!bar) return;
+      bar.classList.remove('connected', 'error');
+      if (isError) {
+        bar.classList.add('error');
+        bar.innerHTML = '<span class="github-status">' + message + '</span>' +
+          '<button type="button" class="github-btn" onclick="GithubSync.showConnectForm()">Reconnect</button>';
+      } else if (success) {
+        renderConnected();
+      } else {
+        bar.innerHTML = '<span class="github-status">' + (message || '') + '</span>';
+      }
+    }
+
+    function renderConnected() {
+      const bar = document.getElementById('github-bar');
+      if (!bar) return;
+      bar.classList.remove('error');
+      bar.classList.add('connected');
+      bar.innerHTML =
+        '<span class="github-status" id="github-status">🟢 Synced to ' + OWNER + '/' + REPO + '</span>' +
+        '<button type="button" class="github-btn link" onclick="GithubSync.disconnect()">Disconnect</button>';
+    }
+
+    function renderDisconnected() {
+      const bar = document.getElementById('github-bar');
+      if (!bar) return;
+      bar.classList.remove('connected', 'error');
+      bar.innerHTML =
+        '<span class="github-status" id="github-status">Not connected to GitHub — using this page\'s built-in data.</span>' +
+        '<button type="button" class="github-btn" onclick="GithubSync.showConnectForm()">Connect GitHub</button>';
+    }
+
+    function showConnectForm() {
+      const bar = document.getElementById('github-bar');
+      if (!bar) return;
+      bar.classList.remove('connected', 'error');
+      bar.innerHTML =
+        '<span class="github-connect-form">' +
+          '<input type="password" id="github-token-field" placeholder="Paste your GitHub token" autocomplete="off">' +
+          '<button type="button" class="github-btn" onclick="GithubSync.connect()">Connect</button>' +
+          '<button type="button" class="github-btn link" onclick="GithubSync.renderDisconnected()">Cancel</button>' +
+        '</span>';
+      const field = document.getElementById('github-token-field');
+      if (field) {
+        field.focus();
+        field.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
+      }
+    }
+
+    async function connect() {
+      const field = document.getElementById('github-token-field');
+      const token = field ? field.value.trim() : '';
+      if (!token) return;
+      try {
+        localStorage.setItem(TOKEN_KEY, token);
+      } catch (e) {
+        setStatus('Could not store the token in this browser.', false, true);
+        return;
+      }
+      const bar = document.getElementById('github-bar');
+      if (bar) bar.innerHTML = '<span class="github-status">Connecting…</span>';
+      try {
+        const remote = await load();
+        if (remote) {
+          applyLoadedData(remote);
+        } else {
+          await save(collectAllData());
+        }
+        renderConnected();
+      } catch (e) {
+        disconnect(false);
+        setStatus('Could not connect: ' + e.message + '. Check the token and try again.', false, true);
+      }
+    }
+
+    function disconnect(rerender) {
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+      cachedSha = null;
+      if (rerender !== false) renderDisconnected();
+    }
+
+    return { isConnected, load, save, setStatus, renderConnected, renderDisconnected, showConnectForm, connect, disconnect };
+  })();
+
   /* ================= combined save / load ================= */
   let fileHandle = null;
 
+  function collectAllData() {
+    return { budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
+  }
+
   function buildFileContents() {
-    const data = { budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
+    const data = collectAllData();
     const clone = document.documentElement.cloneNode(true);
     clone.querySelector('#saved-data').textContent = JSON.stringify(data);
     clone.querySelector('#income-rows').innerHTML = '';
@@ -2736,6 +2952,22 @@
 
   async function saveApp() {
     const status = document.getElementById('save-status');
+
+    if (GithubSync.isConnected()) {
+      status.style.color = 'var(--gold)';
+      status.textContent = 'Saving to GitHub…';
+      try {
+        await GithubSync.save(collectAllData());
+        status.style.color = 'var(--income)';
+        status.textContent = 'Saved to GitHub';
+        setTimeout(() => { status.textContent = ''; }, 3000);
+      } catch (e) {
+        status.style.color = 'var(--expense)';
+        status.textContent = 'GitHub save failed: ' + e.message;
+      }
+      return;
+    }
+
     const html = buildFileContents();
 
     if (!window.showSaveFilePicker) {
@@ -2835,14 +3067,7 @@
     window.print();
   }
 
-  function loadApp() {
-    let saved = null;
-    try {
-      const raw = document.getElementById('saved-data').textContent.trim();
-      if (raw) saved = JSON.parse(raw);
-    } catch (e) {
-      saved = null;
-    }
+  function applyLoadedData(saved) {
     // Migrate the old flat Income list (from the Monthly Budget tab) into the new Income tab,
     // for files saved before Income got its own tab.
     let incomeState = saved ? saved.income : null;
@@ -2864,6 +3089,40 @@
     UtilitiesApp.setState(saved ? saved.utilities : null);
     SavingsApp.setState(saved ? saved.savings : null);
     SubscriptionsApp.setState(saved ? saved.subscriptions : null);
+  }
+
+  function readEmbeddedData() {
+    try {
+      const raw = document.getElementById('saved-data').textContent.trim();
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function loadApp() {
+    // If connected to GitHub, that's the source of truth — fall back to whatever's
+    // embedded in this page (the last local save) if there's no token yet, or if the
+    // GitHub request fails for any reason.
+    if (GithubSync.isConnected()) {
+      GithubSync.setStatus('Loading latest data from GitHub…');
+      try {
+        const remote = await GithubSync.load();
+        if (remote) {
+          applyLoadedData(remote);
+        } else {
+          applyLoadedData(readEmbeddedData());
+        }
+        GithubSync.setStatus(null, true);
+        return;
+      } catch (e) {
+        applyLoadedData(readEmbeddedData());
+        GithubSync.setStatus('Could not load from GitHub (' + e.message + ') — showing this page\'s last local save instead.', false, true);
+        return;
+      }
+    }
+    applyLoadedData(readEmbeddedData());
+    GithubSync.renderDisconnected();
   }
 
   loadApp();
