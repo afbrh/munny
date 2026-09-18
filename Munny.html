@@ -1,0 +1,2873 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Munny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F6F4EC;
+    --paper-line: #E4DFCE;
+    --ink: #23261F;
+    --ink-soft: #6B6C5F;
+    --income: #2F5233;
+    --income-bg: #E7EEE1;
+    --expense: #8C3A2B;
+    --expense-bg: #F3E3DD;
+    --gold: #9C7A2E;
+    --gold-bg: #F1E9D2;
+    --danger: #A32D2D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Sans Pro', sans-serif;
+    padding: 40px 20px 80px;
+    overflow-x: hidden;
+  }
+
+  /* ---------- app shell / tabs ---------- */
+  .app-shell { max-width: 820px; margin: 0 auto; }
+  .tab-bar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .tabs {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 5px;
+    row-gap: 8px;
+  }
+  .tab-btn {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 14px;
+    background: var(--paper-line);
+    color: var(--ink-soft);
+    border: 1.5px solid var(--ink-soft);
+    border-bottom: none;
+    border-radius: 9px 9px 0 0;
+    padding: 9px 20px 9px;
+    cursor: pointer;
+    position: relative;
+    top: 3px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: top .12s ease, background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .tab-btn:hover:not(.active) { color: var(--ink); background: var(--gold-bg); top: 1px; }
+  .tab-btn.active {
+    background: var(--paper);
+    border-color: var(--ink);
+    color: var(--ink);
+    top: 0;
+    z-index: 2;
+    margin-bottom: -2px;
+    padding-bottom: 11px;
+    cursor: default;
+  }
+  .save-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+  .save-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .save-btn:hover { opacity: 0.88; }
+  .save-btn.export-btn {
+    background: none;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
+  .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
+  #print-report { display: none; }
+  .app-footnote {
+    max-width: 820px;
+    margin: 30px auto 0;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  /* ================= Budget tab (scoped) ================= */
+  #tab-budget .sheet { max-width: 640px; margin: 0 auto; }
+  #tab-budget h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  #tab-budget .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0 0 32px; }
+  #tab-budget .section { margin-bottom: 28px; }
+  #tab-budget .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  #tab-budget .section-head h2 { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; margin: 0; }
+  #tab-budget .section.income .section-head h2 { color: var(--income); }
+  #tab-budget .section.expense .section-head h2 { color: var(--expense); }
+  #tab-budget .section-total { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500; }
+  #tab-budget .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  #tab-budget .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
+  #tab-budget .row-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  #tab-budget .row input[type="text"] {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    padding: 4px 2px;
+  }
+  #tab-budget .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-budget .row.locked { background: var(--gold-bg); border-radius: 6px; padding: 9px 8px; margin: 0 -8px; border-bottom-color: transparent; }
+  #tab-budget .row.locked input[type="text"] { color: var(--gold); font-weight: 600; cursor: default; }
+  #tab-budget .row.locked input[type="number"] { color: var(--gold); cursor: not-allowed; }
+  #tab-budget .row.locked .lock-icon { font-size: 13px; color: var(--gold); margin-right: 2px; flex-shrink: 0; }
+  #tab-budget .row.locked .lock-hint {
+    font-size: 11px; color: var(--gold); background: none; border: none;
+    text-decoration: underline; cursor: pointer; padding: 0; margin-right: 4px; flex-shrink: 0;
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  #tab-budget .amount-wrap { display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 15px; }
+  #tab-budget .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
+  #tab-budget .row input[type="number"] {
+    width: 90px;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--ink);
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  #tab-budget .row input[type="number"]::-webkit-outer-spin-button,
+  #tab-budget .row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-budget .row input[type="number"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-budget .remove-btn {
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+  }
+  #tab-budget .remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-budget .add-row-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #tab-budget .section.income .add-row-btn:hover { border-color: var(--income); color: var(--income); }
+  #tab-budget .section.expense .add-row-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-budget .summary { margin-top: 36px; padding-top: 20px; border-top: 2px solid var(--ink); }
+  #tab-budget .summary-line { display: flex; flex-wrap: wrap; row-gap: 2px; justify-content: space-between; font-size: 15px; padding: 6px 0; }
+  #tab-budget .summary-line .label { color: var(--ink-soft); }
+  #tab-budget .summary-line .value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+  #tab-budget .summary-line.income .value { color: var(--income); }
+  #tab-budget .summary-line.expense .value { color: var(--expense); }
+  #tab-budget .net-line {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding: 16px 18px;
+    border-radius: 8px;
+    background: var(--gold-bg);
+  }
+  #tab-budget .net-line .label { font-family: 'Lora', serif; font-weight: 600; font-size: 16px; color: var(--gold); }
+  #tab-budget .net-line .value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 22px; color: var(--gold); }
+  #tab-budget .net-line.negative { background: var(--expense-bg); }
+  #tab-budget .net-line.negative .label,
+  #tab-budget .net-line.negative .value { color: var(--expense); }
+  #tab-budget .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Income tab (scoped) ================= */
+  #tab-income .sheet { max-width: 760px; margin: 0 auto; }
+  #tab-income h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  #tab-income .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0 0 32px; }
+  #tab-income .section { margin-bottom: 28px; }
+  #tab-income .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  #tab-income .section-head h2 { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; margin: 0; color: var(--income); }
+  #tab-income .section-total { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500; }
+  #tab-income .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  #tab-income .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
+  #tab-income .row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex: 0 0 auto; }
+  #tab-income .row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    padding: 4px 2px;
+  }
+  #tab-income .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-income .freq-select {
+    flex-shrink: 0;
+    border: none;
+    background: var(--paper-line);
+    border-radius: 5px;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    padding: 5px 6px;
+    max-width: 118px;
+  }
+  #tab-income .freq-select:focus { outline: none; }
+  #tab-income .amount-wrap { display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 15px; flex-shrink: 0; }
+  #tab-income .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
+  #tab-income .row input[type="number"] {
+    width: 84px;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--ink);
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  #tab-income .row input[type="number"]::-webkit-outer-spin-button,
+  #tab-income .row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-income .row input[type="number"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-income .monthly-equiv {
+    flex-shrink: 0;
+    width: 108px;
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--income);
+  }
+  #tab-income .remove-btn {
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px; flex-shrink: 0;
+  }
+  #tab-income .remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-income .add-row-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #tab-income .add-row-btn:hover { border-color: var(--income); color: var(--income); }
+  #tab-income .summary { margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--ink); }
+  #tab-income .net-line {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    border-radius: 8px;
+    background: var(--gold-bg);
+  }
+  #tab-income .net-line .label { font-family: 'Lora', serif; font-weight: 600; font-size: 16px; color: var(--gold); }
+  #tab-income .net-line .value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 22px; color: var(--gold); }
+  #tab-income .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Subscriptions tab (scoped) ================= */
+  #tab-subscriptions .sheet { max-width: 640px; margin: 0 auto; }
+  #tab-subscriptions h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  #tab-subscriptions .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0 0 32px; }
+  #tab-subscriptions .section { margin-bottom: 28px; }
+  #tab-subscriptions .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  #tab-subscriptions .section-head h2 { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-subscriptions .section-total { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500; }
+  #tab-subscriptions .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  #tab-subscriptions .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
+  #tab-subscriptions .row-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  #tab-subscriptions .row input[type="text"] {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    padding: 4px 2px;
+  }
+  #tab-subscriptions .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-subscriptions .amount-wrap { display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 15px; }
+  #tab-subscriptions .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
+  #tab-subscriptions .row input[type="number"] {
+    width: 90px;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--ink);
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  #tab-subscriptions .row input[type="number"]::-webkit-outer-spin-button,
+  #tab-subscriptions .row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-subscriptions .row input[type="number"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-subscriptions .remove-btn {
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+  }
+  #tab-subscriptions .remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-subscriptions .add-row-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #tab-subscriptions .add-row-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-subscriptions .summary { margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--ink); }
+  #tab-subscriptions .net-line {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    border-radius: 8px;
+    background: var(--gold-bg);
+  }
+  #tab-subscriptions .net-line .label { font-family: 'Lora', serif; font-weight: 600; font-size: 16px; color: var(--gold); }
+  #tab-subscriptions .net-line .value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 22px; color: var(--gold); }
+  #tab-subscriptions .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Mortgage tab (scoped) ================= */
+  #tab-mortgage .page { max-width: 820px; margin: 0 auto; }
+  #tab-mortgage .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-mortgage h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  #tab-mortgage .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
+  #tab-mortgage .add-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-mortgage .add-btn:hover { border-color: var(--gold); color: var(--gold); }
+  #tab-mortgage .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-mortgage .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-mortgage .row-label { width: 180px; flex: 0 0 180px; padding-right: 10px; }
+  #tab-mortgage .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-mortgage .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  #tab-mortgage .row-values { display: flex; gap: 34px; }
+  #tab-mortgage .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-mortgage .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-mortgage .col-head-cell { position: relative; text-align: right; }
+  #tab-mortgage .col-head-cell input.name {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    width: 100%;
+    padding: 2px 0;
+  }
+  #tab-mortgage .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-mortgage .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-mortgage .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-mortgage .col-head-cell .primary-toggle {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
+  }
+  #tab-mortgage .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
+  #tab-mortgage .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
+  #tab-mortgage .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
+  #tab-mortgage .section { margin-bottom: 26px; }
+  #tab-mortgage .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-mortgage .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; }
+  #tab-mortgage .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-mortgage .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-mortgage .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-mortgage .field input[type="number"] {
+    width: 78px;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  #tab-mortgage .field input::-webkit-outer-spin-button,
+  #tab-mortgage .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-mortgage .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-mortgage .field select {
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    padding: 4px 2px;
+    text-align: right;
+    width: 100%;
+  }
+  #tab-mortgage .field select:focus { outline: none; }
+  #tab-mortgage .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-mortgage .summary-block .row { padding: 8px 0; border-bottom: none; }
+  #tab-mortgage .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-mortgage .principal-row .value-text { color: var(--income); }
+  #tab-mortgage .interest-row .value-text { color: var(--expense); }
+  #tab-mortgage .payment-block { margin-top: 22px; }
+  #tab-mortgage .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-mortgage .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-mortgage .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-mortgage .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Food tab (scoped) ================= */
+  #tab-food .page { max-width: 820px; margin: 0 auto; }
+  #tab-food .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-food h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  #tab-food .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
+  #tab-food .add-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-food .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-food .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-food .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-food .row-label { width: 150px; flex: 0 0 150px; padding-right: 10px; }
+  #tab-food .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-food .row-values { display: flex; gap: 34px; }
+  #tab-food .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-food .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-food .col-head-cell { position: relative; text-align: right; }
+  #tab-food .col-head-cell input.name {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    width: 100%;
+    padding: 2px 0;
+  }
+  #tab-food .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-food .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-food .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-food .col-head-cell .primary-toggle {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
+  }
+  #tab-food .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
+  #tab-food .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
+  #tab-food .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
+  #tab-food .section { margin-bottom: 26px; }
+  #tab-food .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-food .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-food .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-food .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-food .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-food .field input[type="number"] {
+    width: 78px;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  #tab-food .field input::-webkit-outer-spin-button,
+  #tab-food .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-food .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-food .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-food .payment-block { margin-top: 4px; }
+  #tab-food .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-food .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-food .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-food .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-food .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Car tab (scoped) ================= */
+  #tab-car .page { max-width: 820px; margin: 0 auto; }
+  #tab-car .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-car h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  #tab-car .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
+  #tab-car .add-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-car .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-car .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-car .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-car .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
+  #tab-car .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-car .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  #tab-car .row-values { display: flex; gap: 34px; }
+  #tab-car .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-car .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-car .col-head-cell { position: relative; text-align: right; }
+  #tab-car .col-head-cell input.name {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    width: 100%;
+    padding: 2px 0;
+  }
+  #tab-car .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-car .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-car .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-car .col-head-cell .primary-toggle {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
+  }
+  #tab-car .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
+  #tab-car .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
+  #tab-car .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
+  #tab-car .section { margin-bottom: 26px; }
+  #tab-car .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-car .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-car .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-car .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-car .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-car .field input[type="number"] {
+    width: 78px;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  #tab-car .field input::-webkit-outer-spin-button,
+  #tab-car .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-car .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-car .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-car .payment-block { margin-top: 4px; }
+  #tab-car .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-car .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-car .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-car .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-car .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Utilities tab (scoped) ================= */
+  #tab-utilities .page { max-width: 820px; margin: 0 auto; }
+  #tab-utilities .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-utilities h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  #tab-utilities .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
+  #tab-utilities .add-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-utilities .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-utilities .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-utilities .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-utilities .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
+  #tab-utilities .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-utilities .row-values { display: flex; gap: 34px; }
+  #tab-utilities .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-utilities .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-utilities .col-head-cell { position: relative; text-align: right; }
+  #tab-utilities .col-head-cell input.name {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    width: 100%;
+    padding: 2px 0;
+  }
+  #tab-utilities .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-utilities .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-utilities .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-utilities .col-head-cell .primary-toggle {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
+  }
+  #tab-utilities .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
+  #tab-utilities .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
+  #tab-utilities .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
+  #tab-utilities .section { margin-bottom: 26px; }
+  #tab-utilities .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-utilities .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-utilities .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-utilities .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-utilities .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-utilities .field input[type="number"] {
+    width: 78px;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  #tab-utilities .field input::-webkit-outer-spin-button,
+  #tab-utilities .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-utilities .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-utilities .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-utilities .payment-block { margin-top: 4px; }
+  #tab-utilities .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-utilities .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-utilities .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-utilities .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-utilities .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Savings tab (scoped) ================= */
+  #tab-savings .page { max-width: 820px; margin: 0 auto; }
+  #tab-savings .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
+  #tab-savings h1 {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  #tab-savings .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
+  #tab-savings .add-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #tab-savings .add-btn:hover { border-color: var(--income); color: var(--income); }
+  #tab-savings .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-savings .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-savings .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; }
+  #tab-savings .row-label .field-label { font-size: 14px; color: var(--ink); }
+  #tab-savings .row-label .hint { display: block; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  #tab-savings .row-values { display: flex; gap: 34px; }
+  #tab-savings .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-savings .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-savings .col-head-cell { position: relative; text-align: right; }
+  #tab-savings .col-head-cell input.name {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    width: 100%;
+    padding: 2px 0;
+  }
+  #tab-savings .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-savings .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-savings .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-savings .col-head-cell .primary-toggle {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
+  }
+  #tab-savings .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
+  #tab-savings .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
+  #tab-savings .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
+  #tab-savings .section { margin-bottom: 26px; }
+  #tab-savings .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-savings .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; color: var(--income); }
+  #tab-savings .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-savings .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-savings .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-savings .field input[type="number"] {
+    width: 78px;
+    text-align: right;
+    border: none;
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  #tab-savings .field input::-webkit-outer-spin-button,
+  #tab-savings .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-savings .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-savings .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-savings .summary-block .row { padding: 8px 0; border-bottom: none; }
+  #tab-savings .payment-block { margin-top: 4px; }
+  #tab-savings .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-savings .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-savings .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-savings .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-savings .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+  /* ================= Print report ================= */
+  #print-report h1 { font-family: 'Lora', serif; font-weight: 600; font-size: 24px; margin: 0 0 2px; }
+  #print-report .report-date { color: var(--ink-soft); font-size: 13px; margin: 0 0 28px; }
+  #print-report h2 {
+    font-family: 'Lora', serif; font-weight: 600; font-size: 17px;
+    margin: 26px 0 10px; border-bottom: 2px solid var(--ink); padding-bottom: 6px;
+  }
+  #print-report h2:first-of-type { margin-top: 0; }
+  #print-report .report-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 13px; }
+  #print-report .report-table th, #print-report .report-table td { padding: 6px 4px; border-bottom: 1px solid var(--paper-line); text-align: left; }
+  #print-report .report-table th:last-child, #print-report .report-table td:last-child { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  #print-report .report-table thead th { font-family: 'Lora', serif; font-weight: 600; border-bottom: 2px solid var(--ink); }
+  #print-report .report-table .report-subhead td { font-weight: 600; padding-top: 16px; border-bottom: 2px solid var(--ink); }
+  #print-report .report-table .report-total td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
+  #print-report .report-net {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px; border: 2px solid var(--gold); border-radius: 6px;
+    font-family: 'Lora', serif; font-weight: 600; color: var(--gold); margin-bottom: 8px;
+  }
+  #print-report .report-net .value { font-family: 'IBM Plex Mono', monospace; font-size: 18px; }
+  #print-report .report-net.negative { border-color: var(--expense); color: var(--expense); }
+
+  @media print {
+    body * { visibility: hidden; }
+    #print-report, #print-report * { visibility: visible; }
+    #print-report {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+    @page { margin: 0.6in; }
+  }
+</style>
+</head>
+<body>
+<script id="saved-data" type="application/json">{"budget":{"income":[{"label":"Income","amount":"10374.00","locked":"income"}],"expense":[{"label":"Housing","amount":"4950.15","locked":"house-payment"},{"label":"Food","amount":"1000.00","locked":"food"},{"label":"Car","amount":"350.00","locked":"car"},{"label":"Utilities","amount":"0.00","locked":"utilities"},{"label":"Savings","amount":"0.00","locked":"savings"},{"label":"Subscriptions","amount":""}]},"income":{"sources":[{"name":"Ryan Paycheck","amount":"3130","frequency":"semimonthly"},{"name":"Alyssa Paycheck","amount":"2057","frequency":"semimonthly"}]},"mortgage":{"scenarios":[{"id":"s1","name":"Scenario A","values":{"loanAmount":600000,"rate":7,"term":"30","tax":10000,"insurance":1500}}],"nextLetter":67,"primaryId":"s1"},"food":{"scenarios":[{"id":"f1","name":"Scenario A","values":{"groceries":800,"eatingOut":200}}],"nextLetter":66,"primaryId":"f1"},"car":{"scenarios":[{"id":"c1","name":"Scenario A","values":{"loan":0,"gas":200,"insurance":150,"maintenance":0,"registration":0}}],"nextLetter":66,"primaryId":"c1"},"utilities":{"scenarios":[{"id":"u1","name":"Scenario A","values":{"electricity":0,"gasHeating":0,"water":0,"internet":0,"mobilePhone":0}}],"nextLetter":66,"primaryId":"u1"},"savings":{"scenarios":[{"id":"sv1","name":"Scenario A","values":{"retirement":0,"emergency":0,"vacation":0,"children":0,"homeMaintenance":0,"general":0}}],"nextLetter":66,"primaryId":"sv1"}}</script>
+
+<div class="app-shell">
+  <div class="tab-bar">
+    <div class="tabs">
+      <button class="tab-btn" data-tab="budget" onclick="switchTab('budget')">Monthly Budget</button>
+      <button class="tab-btn" data-tab="income" onclick="switchTab('income')">Income</button>
+      <button class="tab-btn" data-tab="mortgage" onclick="switchTab('mortgage')">Housing</button>
+      <button class="tab-btn" data-tab="food" onclick="switchTab('food')">Food</button>
+      <button class="tab-btn active" data-tab="car" onclick="switchTab('car')">Car</button>
+      <button class="tab-btn" data-tab="utilities" onclick="switchTab('utilities')">Utilities</button>
+      <button class="tab-btn" data-tab="savings" onclick="switchTab('savings')">Savings</button>
+      <button class="tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')">Subscriptions</button>
+    </div>
+    <div class="save-bar">
+      <button class="save-btn" onclick="saveApp()">Save</button>
+      <button class="save-btn export-btn" onclick="exportPdf()">Export PDF</button>
+      <span class="save-status" id="save-status"></span>
+    </div>
+  </div>
+
+  <div id="print-report"></div>
+
+  <div id="tab-budget" class="tab-panel" hidden="">
+    <div class="sheet">
+      <h1>Monthly budget ledger</h1>
+
+      <div class="section income" id="income-section">
+        <div class="section-head">
+          <h2>Income</h2>
+          <span class="section-total" id="income-total">$10,374.00</span>
+        </div>
+        <div id="income-rows"></div>
+      </div>
+
+      <div class="section expense" id="expense-section">
+        <div class="section-head">
+          <h2>Expenses</h2>
+          <span class="section-total" id="expense-total">$6,300.15</span>
+        </div>
+        <div id="expense-rows"></div>
+        <button class="add-row-btn" onclick="BudgetApp.addRow('expense')">+ Add expense</button>
+      </div>
+
+      <div class="summary">
+        <div class="summary-line income">
+          <span class="label">Total income</span>
+          <span class="value" id="summary-income">$10,374.00</span>
+        </div>
+        <div class="summary-line expense">
+          <span class="label">Total expenses</span>
+          <span class="value" id="summary-expense">$6,300.15</span>
+        </div>
+        <div class="net-line" id="net-line">
+          <span class="label">Net for the month</span>
+          <span class="value" id="net-value">$4,073.85</span>
+        </div>
+      </div>
+      <p class="footnote">"Save" (top right) writes all tabs' numbers directly into this HTML file, so reopening it later shows them again.</p>
+    </div>
+  </div>
+
+  <div id="tab-income" class="tab-panel" hidden="">
+    <div class="sheet">
+      <h1>Income</h1>
+      <p class="subtitle">Add every source of income with its amount and how often you're paid — each is converted to a monthly equivalent automatically.</p>
+
+      <div class="section income" id="income-sources-section">
+        <div class="section-head">
+          <h2>Income sources</h2>
+          <span class="section-total" id="income-sources-total">$10,374.00</span>
+        </div>
+        <div id="income-source-rows"></div>
+        <button class="add-row-btn" onclick="IncomeApp.addSource()">+ Add income source</button>
+      </div>
+
+      <div class="summary">
+        <div class="net-line" id="income-net-line">
+          <span class="label">Total monthly income</span>
+          <span class="value" id="income-total-value">$10,374.00</span>
+        </div>
+      </div>
+      <p class="footnote">Each source's monthly equivalent syncs automatically into the Monthly Budget tab.</p>
+    </div>
+  </div>
+
+  <div id="tab-mortgage" class="tab-panel" hidden="">
+    <div class="page">
+      <div class="header-bar">
+        <div>
+          <h1>Housing</h1>
+          <p class="subtitle">Compare scenarios line by line — the starred scenario's monthly payment feeds the Monthly Budget's "Housing" line.</p>
+        </div>
+        <button class="add-btn" onclick="MortgageApp.addScenario()">+ Add scenario</button>
+      </div>
+
+      <div class="table-scroll">
+        <div id="table-root"></div>
+      </div>
+
+      <p class="footnote">Estimate only — excludes HOA dues and PMI. The starred scenario's total monthly payment syncs automatically into the Monthly Budget tab.</p>
+    </div>
+  </div>
+
+  <div id="tab-food" class="tab-panel" hidden="">
+    <div class="page">
+      <div class="header-bar">
+        <div>
+          <h1>Food</h1>
+          <p class="subtitle">Compare scenarios line by line — the starred scenario's total feeds the Monthly Budget's "Food" line.</p>
+        </div>
+        <button class="add-btn" onclick="FoodApp.addScenario()">+ Add scenario</button>
+      </div>
+
+      <div class="table-scroll">
+        <div id="food-table-root"></div>
+      </div>
+
+      <p class="footnote">The starred scenario's total food expense syncs automatically into the Monthly Budget tab.</p>
+    </div>
+  </div>
+
+  <div id="tab-car" class="tab-panel">
+    <div class="page">
+      <div class="header-bar">
+        <div>
+          <h1>Car</h1>
+          <p class="subtitle">Compare scenarios line by line — maintenance and registration are yearly amounts, divided into monthly automatically, and the starred scenario's total feeds the Monthly Budget's "Car" line.</p>
+        </div>
+        <button class="add-btn" onclick="CarApp.addScenario()">+ Add scenario</button>
+      </div>
+
+      <div class="table-scroll">
+        <div id="car-table-root"></div>
+      </div>
+
+      <p class="footnote">The starred scenario's total monthly car expense syncs automatically into the Monthly Budget tab.</p>
+    </div>
+  </div>
+
+  <div id="tab-utilities" class="tab-panel" hidden="">
+    <div class="page">
+      <div class="header-bar">
+        <div>
+          <h1>Utilities</h1>
+          <p class="subtitle">Compare scenarios line by line — the starred scenario's total feeds the Monthly Budget's "Utilities" line.</p>
+        </div>
+        <button class="add-btn" onclick="UtilitiesApp.addScenario()">+ Add scenario</button>
+      </div>
+
+      <div class="table-scroll">
+        <div id="utilities-table-root"></div>
+      </div>
+
+      <p class="footnote">The starred scenario's total utilities expense syncs automatically into the Monthly Budget tab.</p>
+    </div>
+  </div>
+
+  <div id="tab-savings" class="tab-panel" hidden="">
+    <div class="page">
+      <div class="header-bar">
+        <div>
+          <h1>Savings</h1>
+          <p class="subtitle">Enter each category's yearly goal — it's automatically divided by 12, and the starred scenario's monthly contribution feeds the Monthly Budget's "Savings" line.</p>
+        </div>
+        <button class="add-btn" onclick="SavingsApp.addScenario()">+ Add scenario</button>
+      </div>
+
+      <div class="table-scroll">
+        <div id="savings-table-root"></div>
+      </div>
+
+      <p class="footnote">Yearly goals are divided by 12 into a monthly contribution, which syncs automatically into the Monthly Budget tab.</p>
+    </div>
+  </div>
+
+  <div id="tab-subscriptions" class="tab-panel" hidden>
+    <div class="sheet">
+      <h1>Subscriptions</h1>
+      <p class="subtitle">Add every recurring subscription with its monthly cost — the total syncs into the Monthly Budget's "Subscriptions" line.</p>
+
+      <div class="section" id="subscriptions-section">
+        <div class="section-head">
+          <h2>Subscriptions</h2>
+          <span class="section-total" id="subscriptions-section-total">$0.00</span>
+        </div>
+        <div id="subscription-rows"></div>
+        <button class="add-row-btn" onclick="SubscriptionsApp.addSubscription()">+ Add subscription</button>
+      </div>
+
+      <div class="summary">
+        <div class="net-line" id="subscriptions-net-line">
+          <span class="label">Total monthly subscriptions</span>
+          <span class="value" id="subscriptions-total-value">$0.00</span>
+        </div>
+      </div>
+      <p class="footnote">This total syncs automatically into the Monthly Budget tab.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ================= tab switching ================= */
+  function switchTab(name) {
+    document.getElementById('tab-budget').hidden = name !== 'budget';
+    document.getElementById('tab-income').hidden = name !== 'income';
+    document.getElementById('tab-mortgage').hidden = name !== 'mortgage';
+    document.getElementById('tab-food').hidden = name !== 'food';
+    document.getElementById('tab-car').hidden = name !== 'car';
+    document.getElementById('tab-utilities').hidden = name !== 'utilities';
+    document.getElementById('tab-savings').hidden = name !== 'savings';
+    document.getElementById('tab-subscriptions').hidden = name !== 'subscriptions';
+    document.querySelectorAll('.tab-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.tab === name);
+    });
+  }
+
+  /* ================= Budget app (namespaced) ================= */
+  const BudgetApp = (function () {
+    let rowCounter = 0;
+    const defaults = {
+      expense: ['Transportation']
+    };
+
+    // Locked rows are driven entirely from another tab and can't be typed into here.
+    const LOCKED_FIELDS = [
+      { key: 'house-payment', label: 'Housing', tabName: 'mortgage', legacy: /^rent.*mortgage$/i },
+      { key: 'food', label: 'Food', tabName: 'food', legacy: /^food$/i },
+      { key: 'car', label: 'Car', tabName: 'car', legacy: /^car$/i },
+      { key: 'utilities', label: 'Utilities', tabName: 'utilities', legacy: /^utilities$/i },
+      { key: 'savings', label: 'Savings', tabName: 'savings', legacy: /^savings$/i },
+      { key: 'subscriptions', label: 'Subscriptions', tabName: 'subscriptions', legacy: /^subscriptions$/i }
+    ];
+    const INCOME_LOCKED = { key: 'income', label: 'Income', tabName: 'income' };
+
+    function addRow(type, label, amount, lockKey) {
+      rowCounter++;
+      const id = 'row-' + rowCounter;
+      const container = document.getElementById(type + '-rows');
+      const row = document.createElement('div');
+      row.className = 'row' + (lockKey ? ' locked' : '');
+      row.id = id;
+      row.dataset.lockKey = lockKey || '';
+      if (lockKey) {
+        const meta = (lockKey === 'income' ? INCOME_LOCKED : LOCKED_FIELDS.find(f => f.key === lockKey)) || { label: label, tabName: 'budget' };
+        row.innerHTML =
+          '<div class="row-main">' +
+            '<span class="lock-icon" title="Only editable from ' + meta.label + '">&#128274;</span>' +
+            '<input type="text" value="' + (label || meta.label) + '" readonly>' +
+          '</div>' +
+          '<div class="row-actions">' +
+            '<button type="button" class="lock-hint" onclick="switchTab(\'' + meta.tabName + '\')">Edit in ' + meta.label + '</button>' +
+            '<div class="amount-wrap"><span>$</span><input type="number" value="' + (amount !== undefined ? amount : '') + '" readonly tabindex="-1"></div>' +
+          '</div>';
+      } else {
+        row.innerHTML =
+          '<div class="row-main">' +
+            '<input type="text" placeholder="' + (type === 'income' ? 'Source of income' : 'Expense name') + '" value="' + (label || '') + '">' +
+          '</div>' +
+          '<div class="row-actions">' +
+            '<div class="amount-wrap"><span>$</span><input type="number" placeholder="0.00" step="0.01" min="0" value="' + (amount !== undefined ? amount : '') + '" oninput="BudgetApp.recalculate()"></div>' +
+            '<button class="remove-btn" onclick="BudgetApp.removeRow(\'' + id + '\')" aria-label="Remove row">&times;</button>' +
+          '</div>';
+      }
+      container.appendChild(row);
+    }
+
+    function removeRow(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+      recalculate();
+    }
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function sumSection(type) {
+      const container = document.getElementById(type + '-rows');
+      const inputs = container.querySelectorAll('input[type="number"]');
+      let total = 0;
+      inputs.forEach(i => { total += parseFloat(i.value) || 0; });
+      return total;
+    }
+
+    function recalculate() {
+      const incomeTotal = sumSection('income');
+      const expenseTotal = sumSection('expense');
+      const net = incomeTotal - expenseTotal;
+
+      document.getElementById('income-total').textContent = currency(incomeTotal);
+      document.getElementById('expense-total').textContent = currency(expenseTotal);
+      document.getElementById('summary-income').textContent = currency(incomeTotal);
+      document.getElementById('summary-expense').textContent = currency(expenseTotal);
+
+      const netLine = document.getElementById('net-line');
+      const netValue = document.getElementById('net-value');
+      netValue.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
+      netLine.classList.toggle('negative', net < 0);
+    }
+
+    function collectData() {
+      function rowsFor(type) {
+        const rows = document.querySelectorAll('#' + type + '-rows .row');
+        const data = [];
+        rows.forEach(row => {
+          const label = row.querySelector('input[type="text"]').value;
+          const amount = row.querySelector('input[type="number"]').value;
+          const lockKey = row.dataset.lockKey || '';
+          data.push(lockKey ? { label, amount, locked: lockKey } : { label, amount });
+        });
+        return data;
+      }
+      return { income: rowsFor('income'), expense: rowsFor('expense') };
+    }
+
+    function getState() {
+      return collectData();
+    }
+
+    function setState(state) {
+      document.getElementById('income-rows').innerHTML = '';
+      document.getElementById('expense-rows').innerHTML = '';
+      rowCounter = 0;
+
+      // Income is now entirely driven by the Income tab — a single locked, synced row.
+      const incomeRow = state && Array.isArray(state.income)
+        ? (state.income.find(item => item.locked === 'income') || state.income[0])
+        : null;
+      addRow('income', 'Income', incomeRow ? incomeRow.amount : '', 'income');
+
+      const hasExpenseState = state && state.expense && state.expense.length;
+      let expenseItems = hasExpenseState ? state.expense.slice() : defaults.expense.map(label => ({ label }));
+
+      // Pull each locked row (matched by key, or by legacy label for older saved files) out of the list,
+      // so they can always be rendered first, in a fixed order, regardless of where they were saved.
+      const lockedRows = {};
+      LOCKED_FIELDS.forEach(field => {
+        let idx = expenseItems.findIndex(item => item.locked === field.key);
+        if (idx === -1) idx = expenseItems.findIndex(item => item.locked === true && field.key === 'house-payment'); // legacy boolean flag
+        if (idx === -1) idx = expenseItems.findIndex(item => field.legacy.test((item.label || '').trim()));
+        if (idx !== -1) lockedRows[field.key] = expenseItems.splice(idx, 1)[0];
+      });
+
+      LOCKED_FIELDS.forEach(field => {
+        const row = lockedRows[field.key];
+        addRow('expense', (row && row.label) || field.label, row ? row.amount : '', field.key);
+      });
+      expenseItems.forEach(item => addRow('expense', item.label, item.amount));
+
+      recalculate();
+    }
+
+    function setLockedAmount(key, amount) {
+      const input = document.querySelector('#tab-budget .row.locked[data-lock-key="' + key + '"] input[type="number"]');
+      if (!input) return;
+      const val = (parseFloat(amount) || 0).toFixed(2);
+      if (input.value !== val) {
+        input.value = val;
+        recalculate();
+      }
+    }
+
+    return { addRow, removeRow, recalculate, getState, setState, setLockedAmount };
+  })();
+
+  /* ================= Income app (namespaced) ================= */
+  const IncomeApp = (function () {
+    let rowCounter = 0;
+    const FREQUENCIES = [
+      { value: 'weekly', label: 'Weekly', perYear: 52 },
+      { value: 'biweekly', label: 'Bi-Weekly', perYear: 26 },
+      { value: 'semimonthly', label: 'Semi-Monthly', perYear: 24 },
+      { value: 'monthly', label: 'Monthly', perYear: 12 },
+      { value: 'quarterly', label: 'Quarterly', perYear: 4 },
+      { value: 'annually', label: 'Annually', perYear: 1 }
+    ];
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function frequencyInfo(value) {
+      return FREQUENCIES.find(f => f.value === value) || FREQUENCIES[3];
+    }
+
+    function monthlyEquivalent(amount, frequencyValue) {
+      return (parseFloat(amount) || 0) * frequencyInfo(frequencyValue).perYear / 12;
+    }
+
+    function addSource(name, amount, frequency) {
+      rowCounter++;
+      const id = 'income-src-' + rowCounter;
+      const container = document.getElementById('income-source-rows');
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.id = id;
+
+      const main = document.createElement('div');
+      main.className = 'row-main';
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = 'Source of income';
+      nameInput.value = name || '';
+      nameInput.addEventListener('input', recalculate);
+      main.appendChild(nameInput);
+      row.appendChild(main);
+
+      const actions = document.createElement('div');
+      actions.className = 'row-actions';
+
+      const select = document.createElement('select');
+      select.className = 'freq-select';
+      FREQUENCIES.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.value;
+        opt.textContent = f.label;
+        if ((frequency || 'monthly') === f.value) opt.selected = true;
+        select.appendChild(opt);
+      });
+      select.addEventListener('change', recalculate);
+      actions.appendChild(select);
+
+      const amountWrap = document.createElement('div');
+      amountWrap.className = 'amount-wrap';
+      const dollar = document.createElement('span');
+      dollar.textContent = '$';
+      amountWrap.appendChild(dollar);
+      const amountInput = document.createElement('input');
+      amountInput.type = 'number';
+      amountInput.placeholder = '0.00';
+      amountInput.step = '0.01';
+      amountInput.min = '0';
+      amountInput.value = amount !== undefined ? amount : '';
+      amountInput.addEventListener('input', recalculate);
+      amountWrap.appendChild(amountInput);
+      actions.appendChild(amountWrap);
+
+      const equiv = document.createElement('span');
+      equiv.className = 'monthly-equiv';
+      actions.appendChild(equiv);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.setAttribute('aria-label', 'Remove row');
+      removeBtn.onclick = () => { row.remove(); recalculate(); };
+      actions.appendChild(removeBtn);
+
+      row.appendChild(actions);
+      container.appendChild(row);
+      recalculate();
+    }
+
+    function readRow(row) {
+      return {
+        name: row.querySelector('input[type="text"]').value,
+        amount: row.querySelector('input[type="number"]').value,
+        frequency: row.querySelector('select').value
+      };
+    }
+
+    function recalculate() {
+      const rows = document.querySelectorAll('#income-source-rows .row');
+      let total = 0;
+      rows.forEach(row => {
+        const r = readRow(row);
+        const monthly = monthlyEquivalent(r.amount, r.frequency);
+        total += monthly;
+        const equivEl = row.querySelector('.monthly-equiv');
+        if (equivEl) equivEl.textContent = r.amount !== '' ? ('≈ ' + currency(monthly) + '/mo') : '';
+      });
+      document.getElementById('income-sources-total').textContent = currency(total);
+      document.getElementById('income-total-value').textContent = currency(total);
+      BudgetApp.setLockedAmount('income', total);
+    }
+
+    function getState() {
+      const rows = document.querySelectorAll('#income-source-rows .row');
+      const sources = [];
+      rows.forEach(row => sources.push(readRow(row)));
+      return { sources };
+    }
+
+    function setState(state) {
+      document.getElementById('income-source-rows').innerHTML = '';
+      rowCounter = 0;
+      if (state && Array.isArray(state.sources)) {
+        state.sources.forEach(s => addSource(s.name, s.amount, s.frequency));
+      } else {
+        addSource('Paycheck', '', 'monthly');
+        addSource('Freelance / side income', '', 'monthly');
+      }
+      recalculate();
+    }
+
+    function getSummary() {
+      const rows = document.querySelectorAll('#income-source-rows .row');
+      let total = 0;
+      const items = [];
+      rows.forEach(row => {
+        const r = readRow(row);
+        const monthly = monthlyEquivalent(r.amount, r.frequency);
+        total += monthly;
+        const freqLabel = frequencyInfo(r.frequency).label;
+        items.push({
+          label: (r.name || 'Income source') + ' (' + freqLabel + ')',
+          value: currency(parseFloat(r.amount) || 0) + ' → ' + currency(monthly) + '/mo'
+        });
+      });
+      return {
+        title: 'Income',
+        scenarios: [{ name: 'All sources', isPrimary: false, rows: items, totalLabel: 'Total monthly income', total: currency(total) }]
+      };
+    }
+
+    return { addSource, getState, setState, recalculate, getSummary };
+  })();
+
+  /* ================= Mortgage app (namespaced) ================= */
+  const MortgageApp = (function () {
+    const LOAN_FIELDS = [
+      { key: 'loanAmount', label: 'Loan amount', type: 'currency' },
+      { key: 'rate', label: 'Interest rate', type: 'percent' },
+      { key: 'term', label: 'Loan term', type: 'select' }
+    ];
+    const TAX_FIELDS = [
+      { key: 'tax', label: 'Property tax', type: 'currency', hint: 'per year' },
+      { key: 'insurance', label: 'Home insurance', type: 'currency', hint: 'per year' }
+    ];
+    const DEFAULTS = { loanAmount: 320000, rate: 6.5, term: '30', tax: 4800, insurance: 1500 };
+    const TERM_OPTIONS = [30, 20, 15, 10];
+
+    let scenarios = [
+      { id: 's1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) },
+      { id: 's2', name: 'Scenario B', values: Object.assign({}, DEFAULTS, { rate: 6.0, term: '15' }) }
+    ];
+    let nextLetter = 67;
+    let primaryId = 's1';
+
+    function setPrimary(id) {
+      if (!scenarios.some(s => s.id === id)) return;
+      primaryId = id;
+      render();
+    }
+
+    function currency(n, decimals) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const scenario = scenarios.find(s => s.id === scenarioId);
+      if (!scenario) return;
+      scenario.values[key] = raw;
+      recalculateAll();
+    }
+
+    function removeScenario(id) {
+      if (scenarios.length <= 1) return;
+      scenarios = scenarios.filter(s => s.id !== id);
+      if (primaryId === id) primaryId = scenarios[0].id;
+      render();
+    }
+
+    function addScenario() {
+      const id = 's' + Date.now();
+      const name = 'Scenario ' + String.fromCharCode(nextLetter);
+      nextLetter++;
+      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
+      render();
+    }
+
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const isPrimary = scenario.id === primaryId;
+        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        cell.appendChild(input);
+
+        const toggle = document.createElement('label');
+        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
+        toggle.title = 'Use this scenario\'s monthly payment as the Monthly Budget "Housing" amount';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'primary-scenario';
+        radio.checked = isPrimary;
+        radio.addEventListener('change', () => setPrimary(scenario.id));
+        const toggleText = document.createElement('span');
+        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
+        toggle.appendChild(radio);
+        toggle.appendChild(toggleText);
+        cell.appendChild(toggle);
+
+        if (scenarios.length > 1) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = () => removeScenario(scenario.id);
+          cell.appendChild(removeBtn);
+        }
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      label.innerHTML = '<span class="field-label">' + field.label + '</span>' +
+        (typeof field.hint === 'string' ? '<span class="hint">' + field.hint + '</span>' : '');
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+
+        if (field.type === 'select') {
+          const select = document.createElement('select');
+          TERM_OPTIONS.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = String(y);
+            opt.textContent = y + ' years';
+            if (String(scenario.values.term) === String(y)) opt.selected = true;
+            select.appendChild(opt);
+          });
+          select.addEventListener('change', e => updateValue(scenario.id, 'term', e.target.value));
+          wrap.appendChild(select);
+        } else {
+          if (field.type === 'currency') {
+            const dollar = document.createElement('span');
+            dollar.textContent = '$';
+            wrap.appendChild(dollar);
+          }
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = '0';
+          input.step = field.type === 'percent' ? '0.05' : '50';
+          input.value = scenario.values[field.key];
+          input.dataset.scenario = scenario.id;
+          input.dataset.field = field.key;
+          input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+          wrap.appendChild(input);
+          if (field.type === 'percent') {
+            const pct = document.createElement('span');
+            pct.textContent = '%';
+            wrap.appendChild(pct);
+          }
+        }
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildOutputRow(label, idPrefix, extraClass) {
+      const row = el('div', 'row flex-row' + (extraClass ? ' ' + extraClass : ''));
+      const lbl = el('div', 'row-label', '<span class="field-label">' + label + '</span>');
+      row.appendChild(lbl);
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = idPrefix + '-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildPaymentRow() {
+      const row = el('div', 'flex-row payment-row');
+      const lbl = el('div', 'row-label', '<span class="field-label">Monthly payment</span>');
+      row.appendChild(lbl);
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'monthly-payment-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const loanSection = el('div', 'section');
+      loanSection.appendChild(el('div', 'section-head', '<h2>Loan details</h2>'));
+      LOAN_FIELDS.forEach(f => loanSection.appendChild(buildInputRow(f)));
+      root.appendChild(loanSection);
+
+      const taxSection = el('div', 'section');
+      taxSection.appendChild(el('div', 'section-head', '<h2>Taxes and insurance</h2>'));
+      TAX_FIELDS.forEach(f => taxSection.appendChild(buildInputRow(f)));
+      root.appendChild(taxSection);
+
+      const totalsBlock = el('div', 'summary-block');
+      totalsBlock.appendChild(buildOutputRow('Total interest', 'total-interest', 'interest-row'));
+      totalsBlock.appendChild(buildOutputRow('Total paid (P&amp;I)', 'total-paid'));
+      root.appendChild(totalsBlock);
+
+      const monthlyBlock = el('div', 'summary-block payment-block');
+      monthlyBlock.appendChild(buildOutputRow('Principal and interest', 'pi-monthly'));
+      monthlyBlock.appendChild(buildOutputRow('Property tax', 'tax-monthly'));
+      monthlyBlock.appendChild(buildOutputRow('Home insurance', 'insurance-monthly'));
+      monthlyBlock.appendChild(buildPaymentRow());
+      root.appendChild(monthlyBlock);
+
+      recalculateAll();
+    }
+
+    function recalculateAll() {
+      scenarios.forEach(scenario => {
+        const v = scenario.values;
+        const loanAmount = parseFloat(v.loanAmount) || 0;
+        const annualRate = parseFloat(v.rate) || 0;
+        const years = parseInt(v.term, 10) || 30;
+
+        const n = years * 12;
+        const monthlyRate = annualRate / 100 / 12;
+
+        let monthlyPayment;
+        if (monthlyRate === 0) {
+          monthlyPayment = n > 0 ? loanAmount / n : 0;
+        } else {
+          const factor = Math.pow(1 + monthlyRate, n);
+          monthlyPayment = loanAmount * (monthlyRate * factor) / (factor - 1);
+        }
+        if (!isFinite(monthlyPayment)) monthlyPayment = 0;
+
+        const totalPaid = monthlyPayment * n;
+        const totalInterest = Math.max(totalPaid - loanAmount, 0);
+
+        const annualTax = parseFloat(v.tax) || 0;
+        const annualInsurance = parseFloat(v.insurance) || 0;
+        const taxMonthly = annualTax / 12;
+        const insuranceMonthly = annualInsurance / 12;
+        const totalMonthly = monthlyPayment + taxMonthly + insuranceMonthly;
+
+        const setText = (idPrefix, text) => {
+          const elx = document.getElementById(idPrefix + '-' + scenario.id);
+          if (elx) elx.textContent = text;
+        };
+
+        setText('total-interest', currency(totalInterest));
+        setText('total-paid', currency(totalPaid));
+        setText('pi-monthly', currency(monthlyPayment));
+        setText('tax-monthly', currency(taxMonthly));
+        setText('insurance-monthly', currency(insuranceMonthly));
+        setText('monthly-payment', currency(totalMonthly));
+
+        if (scenario.id === primaryId) {
+          BudgetApp.setLockedAmount('house-payment', totalMonthly);
+        }
+      });
+    }
+
+    function getState() {
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+    }
+
+    function setState(state) {
+      if (state && state.scenarios && state.scenarios.length) {
+        scenarios = state.scenarios;
+        nextLetter = state.nextLetter || nextLetter;
+        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
+          ? state.primaryId
+          : scenarios[0].id;
+      } else {
+        primaryId = scenarios[0].id;
+      }
+      render();
+    }
+
+    function getSummary() {
+      return {
+        title: 'Housing',
+        scenarios: scenarios.map(scenario => {
+          const v = scenario.values;
+          const loanAmount = parseFloat(v.loanAmount) || 0;
+          const annualRate = parseFloat(v.rate) || 0;
+          const years = parseInt(v.term, 10) || 30;
+          const n = years * 12;
+          const monthlyRate = annualRate / 100 / 12;
+          let monthlyPayment;
+          if (monthlyRate === 0) {
+            monthlyPayment = n > 0 ? loanAmount / n : 0;
+          } else {
+            const factor = Math.pow(1 + monthlyRate, n);
+            monthlyPayment = loanAmount * (monthlyRate * factor) / (factor - 1);
+          }
+          if (!isFinite(monthlyPayment)) monthlyPayment = 0;
+          const taxMonthly = (parseFloat(v.tax) || 0) / 12;
+          const insuranceMonthly = (parseFloat(v.insurance) || 0) / 12;
+          const totalMonthly = monthlyPayment + taxMonthly + insuranceMonthly;
+          return {
+            name: scenario.name,
+            isPrimary: scenario.id === primaryId,
+            rows: [
+              { label: 'Loan amount', value: currency(loanAmount) },
+              { label: 'Interest rate', value: annualRate + '%' },
+              { label: 'Loan term', value: years + ' years' },
+              { label: 'Property tax (monthly)', value: currency(taxMonthly, 2) },
+              { label: 'Home insurance (monthly)', value: currency(insuranceMonthly, 2) },
+              { label: 'Principal & interest (monthly)', value: currency(monthlyPayment, 2) }
+            ],
+            totalLabel: 'Monthly payment',
+            total: currency(totalMonthly, 2)
+          };
+        })
+      };
+    }
+
+    return { addScenario, getState, setState, setPrimary, getSummary };
+  })();
+
+  /* ================= Food app (namespaced) ================= */
+  const FoodApp = (function () {
+    const FOOD_FIELDS = [
+      { key: 'groceries', label: 'Groceries' },
+      { key: 'eatingOut', label: 'Eating out' }
+    ];
+    const DEFAULTS = { groceries: 0, eatingOut: 0 };
+
+    let scenarios = [
+      { id: 'f1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
+    ];
+    let nextLetter = 66; // 'B'
+    let primaryId = 'f1';
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function setPrimary(id) {
+      if (!scenarios.some(s => s.id === id)) return;
+      primaryId = id;
+      render();
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const scenario = scenarios.find(s => s.id === scenarioId);
+      if (!scenario) return;
+      scenario.values[key] = raw;
+      recalculateAll();
+    }
+
+    function removeScenario(id) {
+      if (scenarios.length <= 1) return;
+      scenarios = scenarios.filter(s => s.id !== id);
+      if (primaryId === id) primaryId = scenarios[0].id;
+      render();
+    }
+
+    function addScenario() {
+      const id = 'f' + Date.now();
+      const name = 'Scenario ' + String.fromCharCode(nextLetter);
+      nextLetter++;
+      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
+      render();
+    }
+
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const isPrimary = scenario.id === primaryId;
+        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        cell.appendChild(input);
+
+        const toggle = document.createElement('label');
+        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
+        toggle.title = 'Use this scenario\'s total as the Monthly Budget "Food" amount';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'food-primary-scenario';
+        radio.checked = isPrimary;
+        radio.addEventListener('change', () => setPrimary(scenario.id));
+        const toggleText = document.createElement('span');
+        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
+        toggle.appendChild(radio);
+        toggle.appendChild(toggleText);
+        cell.appendChild(toggle);
+
+        if (scenarios.length > 1) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = () => removeScenario(scenario.id);
+          cell.appendChild(removeBtn);
+        }
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">' + field.label + '</span>'));
+
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = scenario.values[field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total food expense</span>'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'food-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('food-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Food spending</h2>'));
+      FOOD_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
+
+      recalculateAll();
+    }
+
+    function recalculateAll() {
+      scenarios.forEach(scenario => {
+        const v = scenario.values;
+        const groceries = parseFloat(v.groceries) || 0;
+        const eatingOut = parseFloat(v.eatingOut) || 0;
+        const total = groceries + eatingOut;
+
+        const totalEl = document.getElementById('food-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
+
+        if (scenario.id === primaryId) {
+          BudgetApp.setLockedAmount('food', total);
+        }
+      });
+    }
+
+    function getState() {
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+    }
+
+    function setState(state) {
+      if (state && state.scenarios && state.scenarios.length) {
+        scenarios = state.scenarios;
+        nextLetter = state.nextLetter || nextLetter;
+        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
+          ? state.primaryId
+          : scenarios[0].id;
+      } else if (state && (state.groceries !== undefined || state.eatingOut !== undefined)) {
+        // Migrate the older single-scenario format.
+        scenarios = [{
+          id: 'f1',
+          name: 'Scenario A',
+          values: { groceries: parseFloat(state.groceries) || 0, eatingOut: parseFloat(state.eatingOut) || 0 }
+        }];
+        primaryId = 'f1';
+      } else {
+        scenarios = [{ id: 'f1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
+        primaryId = 'f1';
+      }
+      render();
+    }
+
+    function getSummary() {
+      return {
+        title: 'Food',
+        scenarios: scenarios.map(scenario => {
+          let total = 0;
+          const rows = FOOD_FIELDS.map(f => {
+            const val = parseFloat(scenario.values[f.key]) || 0;
+            total += val;
+            return { label: f.label, value: currency(val) };
+          });
+          return { name: scenario.name, isPrimary: scenario.id === primaryId, rows, totalLabel: 'Total food expense', total: currency(total) };
+        })
+      };
+    }
+
+    return { addScenario, getState, setState, setPrimary, getSummary };
+  })();
+
+  /* ================= Car app (namespaced) ================= */
+  const CarApp = (function () {
+    const CAR_FIELDS = [
+      { key: 'loan', label: 'Loan / lease payment' },
+      { key: 'gas', label: 'Gas' },
+      { key: 'insurance', label: 'Insurance' },
+      { key: 'maintenance', label: 'Maintenance & repairs', annual: true, hint: 'per year' },
+      { key: 'registration', label: 'Registration & fees', annual: true, hint: 'per year' }
+    ];
+    const DEFAULTS = { loan: 0, gas: 0, insurance: 0, maintenance: 0, registration: 0 };
+
+    let scenarios = [
+      { id: 'c1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
+    ];
+    let nextLetter = 66; // 'B'
+    let primaryId = 'c1';
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function setPrimary(id) {
+      if (!scenarios.some(s => s.id === id)) return;
+      primaryId = id;
+      render();
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const scenario = scenarios.find(s => s.id === scenarioId);
+      if (!scenario) return;
+      scenario.values[key] = raw;
+      recalculateAll();
+    }
+
+    function removeScenario(id) {
+      if (scenarios.length <= 1) return;
+      scenarios = scenarios.filter(s => s.id !== id);
+      if (primaryId === id) primaryId = scenarios[0].id;
+      render();
+    }
+
+    function addScenario() {
+      const id = 'c' + Date.now();
+      const name = 'Scenario ' + String.fromCharCode(nextLetter);
+      nextLetter++;
+      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
+      render();
+    }
+
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const isPrimary = scenario.id === primaryId;
+        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        cell.appendChild(input);
+
+        const toggle = document.createElement('label');
+        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
+        toggle.title = 'Use this scenario\'s total as the Monthly Budget "Car" amount';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'car-primary-scenario';
+        radio.checked = isPrimary;
+        radio.addEventListener('change', () => setPrimary(scenario.id));
+        const toggleText = document.createElement('span');
+        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
+        toggle.appendChild(radio);
+        toggle.appendChild(toggleText);
+        cell.appendChild(toggle);
+
+        if (scenarios.length > 1) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = () => removeScenario(scenario.id);
+          cell.appendChild(removeBtn);
+        }
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      label.innerHTML = '<span class="field-label">' + field.label + '</span>' +
+        (typeof field.hint === 'string' ? '<span class="hint">' + field.hint + '</span>' : '');
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = scenario.values[field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total car expense</span>'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'car-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('car-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Car spending</h2>'));
+      CAR_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
+
+      recalculateAll();
+    }
+
+    function recalculateAll() {
+      scenarios.forEach(scenario => {
+        const v = scenario.values;
+        let total = 0;
+        CAR_FIELDS.forEach(f => {
+          const val = parseFloat(v[f.key]) || 0;
+          total += f.annual ? val / 12 : val;
+        });
+
+        const totalEl = document.getElementById('car-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
+
+        if (scenario.id === primaryId) {
+          BudgetApp.setLockedAmount('car', total);
+        }
+      });
+    }
+
+    function getState() {
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+    }
+
+    function setState(state) {
+      if (state && state.scenarios && state.scenarios.length) {
+        scenarios = state.scenarios;
+        nextLetter = state.nextLetter || nextLetter;
+        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
+          ? state.primaryId
+          : scenarios[0].id;
+      } else {
+        scenarios = [{ id: 'c1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
+        primaryId = 'c1';
+      }
+      render();
+    }
+
+    function getSummary() {
+      return {
+        title: 'Car',
+        scenarios: scenarios.map(scenario => {
+          let total = 0;
+          const rows = CAR_FIELDS.map(f => {
+            const val = parseFloat(scenario.values[f.key]) || 0;
+            total += f.annual ? val / 12 : val;
+            return { label: f.label + (f.annual ? ' (per year)' : ''), value: currency(val) };
+          });
+          return { name: scenario.name, isPrimary: scenario.id === primaryId, rows, totalLabel: 'Total car expense (monthly)', total: currency(total) };
+        })
+      };
+    }
+
+    return { addScenario, getState, setState, setPrimary, getSummary };
+  })();
+
+  /* ================= Utilities app (namespaced) ================= */
+  const UtilitiesApp = (function () {
+    const UTILITIES_FIELDS = [
+      { key: 'electricity', label: 'Electricity' },
+      { key: 'gasHeating', label: 'Gas / heating' },
+      { key: 'water', label: 'Water & sewer' },
+      { key: 'internet', label: 'Internet' },
+      { key: 'mobilePhone', label: 'Mobile Phone' }
+    ];
+    const DEFAULTS = { electricity: 0, gasHeating: 0, water: 0, internet: 0, mobilePhone: 0 };
+
+    let scenarios = [
+      { id: 'u1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
+    ];
+    let nextLetter = 66; // 'B'
+    let primaryId = 'u1';
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function setPrimary(id) {
+      if (!scenarios.some(s => s.id === id)) return;
+      primaryId = id;
+      render();
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const scenario = scenarios.find(s => s.id === scenarioId);
+      if (!scenario) return;
+      scenario.values[key] = raw;
+      recalculateAll();
+    }
+
+    function removeScenario(id) {
+      if (scenarios.length <= 1) return;
+      scenarios = scenarios.filter(s => s.id !== id);
+      if (primaryId === id) primaryId = scenarios[0].id;
+      render();
+    }
+
+    function addScenario() {
+      const id = 'u' + Date.now();
+      const name = 'Scenario ' + String.fromCharCode(nextLetter);
+      nextLetter++;
+      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
+      render();
+    }
+
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const isPrimary = scenario.id === primaryId;
+        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        cell.appendChild(input);
+
+        const toggle = document.createElement('label');
+        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
+        toggle.title = 'Use this scenario\'s total as the Monthly Budget "Utilities" amount';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'utilities-primary-scenario';
+        radio.checked = isPrimary;
+        radio.addEventListener('change', () => setPrimary(scenario.id));
+        const toggleText = document.createElement('span');
+        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
+        toggle.appendChild(radio);
+        toggle.appendChild(toggleText);
+        cell.appendChild(toggle);
+
+        if (scenarios.length > 1) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = () => removeScenario(scenario.id);
+          cell.appendChild(removeBtn);
+        }
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">' + field.label + '</span>'));
+
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = scenario.values[field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total utilities expense</span>'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'utilities-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('utilities-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Utilities spending</h2>'));
+      UTILITIES_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
+
+      recalculateAll();
+    }
+
+    function recalculateAll() {
+      scenarios.forEach(scenario => {
+        const v = scenario.values;
+        let total = 0;
+        UTILITIES_FIELDS.forEach(f => { total += parseFloat(v[f.key]) || 0; });
+
+        const totalEl = document.getElementById('utilities-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
+
+        if (scenario.id === primaryId) {
+          BudgetApp.setLockedAmount('utilities', total);
+        }
+      });
+    }
+
+    function getState() {
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+    }
+
+    function setState(state) {
+      if (state && state.scenarios && state.scenarios.length) {
+        scenarios = state.scenarios;
+        nextLetter = state.nextLetter || nextLetter;
+        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
+          ? state.primaryId
+          : scenarios[0].id;
+      } else {
+        scenarios = [{ id: 'u1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
+        primaryId = 'u1';
+      }
+      render();
+    }
+
+    function getSummary() {
+      return {
+        title: 'Utilities',
+        scenarios: scenarios.map(scenario => {
+          let total = 0;
+          const rows = UTILITIES_FIELDS.map(f => {
+            const val = parseFloat(scenario.values[f.key]) || 0;
+            total += val;
+            return { label: f.label, value: currency(val) };
+          });
+          return { name: scenario.name, isPrimary: scenario.id === primaryId, rows, totalLabel: 'Total utilities expense', total: currency(total) };
+        })
+      };
+    }
+
+    return { addScenario, getState, setState, setPrimary, getSummary };
+  })();
+
+  /* ================= Savings app (namespaced) ================= */
+  const SavingsApp = (function () {
+    const SAVINGS_FIELDS = [
+      { key: 'retirement', label: 'Retirement', hint: 'per year' },
+      { key: 'emergency', label: 'Emergency fund', hint: 'per year' },
+      { key: 'vacation', label: 'Vacation', hint: 'per year' },
+      { key: 'children', label: 'Children / education', hint: 'per year' },
+      { key: 'homeMaintenance', label: 'Home Maintenance', hint: 'per year' },
+      { key: 'general', label: 'General savings', hint: 'per year' }
+    ];
+    const DEFAULTS = { retirement: 0, emergency: 0, vacation: 0, children: 0, homeMaintenance: 0, general: 0 };
+
+    let scenarios = [
+      { id: 'sv1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
+    ];
+    let nextLetter = 66; // 'B'
+    let primaryId = 'sv1';
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function el(tag, cls, html) {
+      const e = document.createElement('div');
+      e.className = cls || '';
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    function setPrimary(id) {
+      if (!scenarios.some(s => s.id === id)) return;
+      primaryId = id;
+      render();
+    }
+
+    function updateValue(scenarioId, key, raw) {
+      const scenario = scenarios.find(s => s.id === scenarioId);
+      if (!scenario) return;
+      scenario.values[key] = raw;
+      recalculateAll();
+    }
+
+    function removeScenario(id) {
+      if (scenarios.length <= 1) return;
+      scenarios = scenarios.filter(s => s.id !== id);
+      if (primaryId === id) primaryId = scenarios[0].id;
+      render();
+    }
+
+    function addScenario() {
+      const id = 'sv' + Date.now();
+      const name = 'Scenario ' + String.fromCharCode(nextLetter);
+      nextLetter++;
+      scenarios.push({ id, name, values: Object.assign({}, DEFAULTS) });
+      render();
+    }
+
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const isPrimary = scenario.id === primaryId;
+        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        cell.appendChild(input);
+
+        const toggle = document.createElement('label');
+        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
+        toggle.title = 'Use this scenario\'s total as the Monthly Budget "Savings" amount';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'savings-primary-scenario';
+        radio.checked = isPrimary;
+        radio.addEventListener('change', () => setPrimary(scenario.id));
+        const toggleText = document.createElement('span');
+        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
+        toggle.appendChild(radio);
+        toggle.appendChild(toggleText);
+        cell.appendChild(toggle);
+
+        if (scenarios.length > 1) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = () => removeScenario(scenario.id);
+          cell.appendChild(removeBtn);
+        }
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(field) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      label.innerHTML = '<span class="field-label">' + field.label + '</span>' +
+        (typeof field.hint === 'string' ? '<span class="hint">' + field.hint + '</span>' : '');
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '1';
+        input.value = scenario.values[field.key];
+        input.addEventListener('input', e => updateValue(scenario.id, field.key, parseFloat(e.target.value) || 0));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildOutputRow(label, idPrefix) {
+      const row = el('div', 'row flex-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">' + label + '</span>'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = idPrefix + '-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildMonthlyRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Monthly contribution</span>'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'savings-monthly-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('savings-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Yearly savings goals</h2>'));
+      SAVINGS_FIELDS.forEach(f => section.appendChild(buildInputRow(f)));
+      root.appendChild(section);
+
+      const totalsBlock = el('div', 'summary-block');
+      totalsBlock.appendChild(buildOutputRow('Total yearly goal', 'savings-yearly'));
+      root.appendChild(totalsBlock);
+
+      const monthlyBlock = el('div', 'summary-block payment-block');
+      monthlyBlock.appendChild(buildMonthlyRow());
+      root.appendChild(monthlyBlock);
+
+      recalculateAll();
+    }
+
+    function recalculateAll() {
+      scenarios.forEach(scenario => {
+        const v = scenario.values;
+        let yearlyTotal = 0;
+        SAVINGS_FIELDS.forEach(f => { yearlyTotal += parseFloat(v[f.key]) || 0; });
+        const monthlyTotal = yearlyTotal / 12;
+
+        const yearlyEl = document.getElementById('savings-yearly-' + scenario.id);
+        if (yearlyEl) yearlyEl.textContent = currency(yearlyTotal);
+        const monthlyEl = document.getElementById('savings-monthly-' + scenario.id);
+        if (monthlyEl) monthlyEl.textContent = currency(monthlyTotal);
+
+        if (scenario.id === primaryId) {
+          BudgetApp.setLockedAmount('savings', monthlyTotal);
+        }
+      });
+    }
+
+    function getState() {
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+    }
+
+    function setState(state) {
+      if (state && state.scenarios && state.scenarios.length) {
+        scenarios = state.scenarios;
+        nextLetter = state.nextLetter || nextLetter;
+        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
+          ? state.primaryId
+          : scenarios[0].id;
+      } else {
+        scenarios = [{ id: 'sv1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
+        primaryId = 'sv1';
+      }
+      render();
+    }
+
+    function getSummary() {
+      return {
+        title: 'Savings',
+        scenarios: scenarios.map(scenario => {
+          let yearlyTotal = 0;
+          const rows = SAVINGS_FIELDS.map(f => {
+            const val = parseFloat(scenario.values[f.key]) || 0;
+            yearlyTotal += val;
+            return { label: f.label + ' (per year)', value: currency(val) };
+          });
+          rows.push({ label: 'Total yearly goal', value: currency(yearlyTotal) });
+          return { name: scenario.name, isPrimary: scenario.id === primaryId, rows, totalLabel: 'Monthly contribution', total: currency(yearlyTotal / 12) };
+        })
+      };
+    }
+
+    return { addScenario, getState, setState, setPrimary, getSummary };
+  })();
+
+  /* ================= Subscriptions app (namespaced) ================= */
+  const SubscriptionsApp = (function () {
+    let rowCounter = 0;
+
+    function currency(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function addSubscription(name, amount) {
+      rowCounter++;
+      const id = 'sub-row-' + rowCounter;
+      const container = document.getElementById('subscription-rows');
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.id = id;
+      row.innerHTML =
+        '<div class="row-main">' +
+          '<input type="text" placeholder="Subscription name" value="' + (name || '') + '">' +
+        '</div>' +
+        '<div class="row-actions">' +
+          '<div class="amount-wrap"><span>$</span><input type="number" placeholder="0.00" step="0.01" min="0" value="' + (amount !== undefined ? amount : '') + '" oninput="SubscriptionsApp.recalculate()"></div>' +
+          '<button class="remove-btn" onclick="SubscriptionsApp.removeRow(\'' + id + '\')" aria-label="Remove row">&times;</button>' +
+        '</div>';
+      container.appendChild(row);
+      recalculate();
+    }
+
+    function removeRow(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+      recalculate();
+    }
+
+    function recalculate() {
+      const rows = document.querySelectorAll('#subscription-rows .row');
+      let total = 0;
+      rows.forEach(row => { total += parseFloat(row.querySelector('input[type="number"]').value) || 0; });
+      document.getElementById('subscriptions-section-total').textContent = currency(total);
+      document.getElementById('subscriptions-total-value').textContent = currency(total);
+      BudgetApp.setLockedAmount('subscriptions', total);
+    }
+
+    function getState() {
+      const rows = document.querySelectorAll('#subscription-rows .row');
+      const items = [];
+      rows.forEach(row => {
+        items.push({
+          name: row.querySelector('input[type="text"]').value,
+          amount: row.querySelector('input[type="number"]').value
+        });
+      });
+      return { items };
+    }
+
+    function setState(state) {
+      document.getElementById('subscription-rows').innerHTML = '';
+      rowCounter = 0;
+      if (state && Array.isArray(state.items)) {
+        state.items.forEach(item => addSubscription(item.name, item.amount));
+      } else {
+        addSubscription('Netflix', '');
+        addSubscription('Spotify', '');
+      }
+      recalculate();
+    }
+
+    function getSummary() {
+      const rows = document.querySelectorAll('#subscription-rows .row');
+      let total = 0;
+      const items = [];
+      rows.forEach(row => {
+        const name = row.querySelector('input[type="text"]').value || 'Subscription';
+        const amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+        total += amount;
+        items.push({ label: name, value: currency(amount) });
+      });
+      return {
+        title: 'Subscriptions',
+        scenarios: [{ name: 'All subscriptions', isPrimary: false, rows: items, totalLabel: 'Total monthly subscriptions', total: currency(total) }]
+      };
+    }
+
+    return { addSubscription, removeRow, getState, setState, recalculate, getSummary };
+  })();
+
+  /* ================= combined save / load ================= */
+  let fileHandle = null;
+
+  function buildFileContents() {
+    const data = { budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
+    const clone = document.documentElement.cloneNode(true);
+    clone.querySelector('#saved-data').textContent = JSON.stringify(data);
+    clone.querySelector('#income-rows').innerHTML = '';
+    clone.querySelector('#income-source-rows').innerHTML = '';
+    clone.querySelector('#expense-rows').innerHTML = '';
+    clone.querySelector('#table-root').innerHTML = '';
+    clone.querySelector('#food-table-root').innerHTML = '';
+    clone.querySelector('#car-table-root').innerHTML = '';
+    clone.querySelector('#utilities-table-root').innerHTML = '';
+    clone.querySelector('#savings-table-root').innerHTML = '';
+    clone.querySelector('#subscription-rows').innerHTML = '';
+    const cloneStatus = clone.querySelector('#save-status');
+    if (cloneStatus) cloneStatus.textContent = '';
+    return '<!DOCTYPE html>\n' + clone.outerHTML;
+  }
+
+  function buildSuggestedFilename() {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mmm = months[now.getMonth()];
+    const yyyy = now.getFullYear();
+    return 'Munny-' + dd + mmm + yyyy + '.html';
+  }
+
+  function downloadFallback(html) {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = buildSuggestedFilename();
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function saveApp() {
+    const status = document.getElementById('save-status');
+    const html = buildFileContents();
+
+    if (!window.showSaveFilePicker) {
+      downloadFallback(html);
+      status.style.color = 'var(--gold)';
+      status.textContent = 'Your browser can\'t write to the file directly — downloaded an updated copy instead.';
+      return;
+    }
+
+    try {
+      if (!fileHandle) {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: buildSuggestedFilename(),
+          types: [{ description: 'HTML file', accept: { 'text/html': ['.html'] } }]
+        });
+      }
+      const writable = await fileHandle.createWritable();
+      await writable.write(html);
+      await writable.close();
+      status.style.color = 'var(--income)';
+      status.textContent = 'Saved into the file';
+      setTimeout(() => { status.textContent = ''; }, 3000);
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        status.textContent = '';
+        return;
+      }
+      status.style.color = 'var(--expense)';
+      status.textContent = 'Could not save — downloaded a copy instead.';
+      downloadFallback(html);
+      fileHandle = null;
+    }
+  }
+
+  /* ================= PDF export (print-to-PDF) ================= */
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str == null ? '' : String(str);
+    return d.innerHTML;
+  }
+
+  function reportCurrency(n) {
+    const num = parseFloat(n) || 0;
+    return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function buildBudgetSectionHtml() {
+    const budget = BudgetApp.getState();
+    const sum = rows => rows.reduce((t, r) => t + (parseFloat(r.amount) || 0), 0);
+    const incomeTotal = sum(budget.income);
+    const expenseTotal = sum(budget.expense);
+    const net = incomeTotal - expenseTotal;
+
+    let html = '<h2>Monthly Budget</h2><table class="report-table"><tbody>';
+    html += '<tr class="report-subhead"><td colspan="2">Income</td></tr>';
+    budget.income.forEach(r => {
+      html += '<tr><td>' + escapeHtml(r.label) + '</td><td>' + reportCurrency(r.amount) + '</td></tr>';
+    });
+    html += '<tr class="report-total"><td>Total income</td><td>' + reportCurrency(incomeTotal) + '</td></tr>';
+    html += '<tr class="report-subhead"><td colspan="2">Expenses</td></tr>';
+    budget.expense.forEach(r => {
+      html += '<tr><td>' + escapeHtml(r.label) + (r.locked ? ' 🔒' : '') + '</td><td>' + reportCurrency(r.amount) + '</td></tr>';
+    });
+    html += '<tr class="report-total"><td>Total expenses</td><td>' + reportCurrency(expenseTotal) + '</td></tr>';
+    html += '</tbody></table>';
+    html += '<div class="report-net' + (net < 0 ? ' negative' : '') + '">' +
+      '<span>Net for the month</span><span class="value">' + (net < 0 ? '-' : '') + reportCurrency(Math.abs(net)) + '</span></div>';
+    return html;
+  }
+
+  function buildScenarioSectionHtml(summary) {
+    let html = '<h2>' + escapeHtml(summary.title) + '</h2>';
+    summary.scenarios.forEach(sc => {
+      html += '<table class="report-table"><thead><tr><th colspan="2">' +
+        escapeHtml(sc.name) + (sc.isPrimary ? ' ★ (used in budget)' : '') + '</th></tr></thead><tbody>';
+      sc.rows.forEach(row => {
+        html += '<tr><td>' + escapeHtml(row.label) + '</td><td>' + escapeHtml(row.value) + '</td></tr>';
+      });
+      html += '<tr class="report-total"><td>' + escapeHtml(sc.totalLabel || 'Total') + '</td><td>' + escapeHtml(sc.total) + '</td></tr>';
+      html += '</tbody></table>';
+    });
+    return html;
+  }
+
+  function buildPrintReportHtml() {
+    let html = '<h1>Munny — Monthly Budget Report</h1>';
+    html += '<p class="report-date">Generated ' + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + '</p>';
+    html += buildBudgetSectionHtml();
+    [IncomeApp, MortgageApp, FoodApp, CarApp, UtilitiesApp, SavingsApp, SubscriptionsApp].forEach(app => {
+      html += buildScenarioSectionHtml(app.getSummary());
+    });
+    return html;
+  }
+
+  function exportPdf() {
+    document.getElementById('print-report').innerHTML = buildPrintReportHtml();
+    window.print();
+  }
+
+  function loadApp() {
+    let saved = null;
+    try {
+      const raw = document.getElementById('saved-data').textContent.trim();
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) {
+      saved = null;
+    }
+    // Migrate the old flat Income list (from the Monthly Budget tab) into the new Income tab,
+    // for files saved before Income got its own tab.
+    let incomeState = saved ? saved.income : null;
+    if (!incomeState && saved && saved.budget && Array.isArray(saved.budget.income) && saved.budget.income.length) {
+      incomeState = {
+        sources: saved.budget.income.map(item => ({
+          name: item.label || 'Income',
+          amount: item.amount,
+          frequency: 'monthly'
+        }))
+      };
+    }
+
+    BudgetApp.setState(saved ? saved.budget : null);
+    IncomeApp.setState(incomeState);
+    MortgageApp.setState(saved ? saved.mortgage : null);
+    FoodApp.setState(saved ? saved.food : null);
+    CarApp.setState(saved ? saved.car : null);
+    UtilitiesApp.setState(saved ? saved.utilities : null);
+    SavingsApp.setState(saved ? saved.savings : null);
+    SubscriptionsApp.setState(saved ? saved.subscriptions : null);
+  }
+
+  loadApp();
+</script>
+
+
+</body></html>
