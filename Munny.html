@@ -97,57 +97,6 @@
   .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
   .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
   #print-report { display: none; }
-
-  /* ---------- GitHub sync bar ---------- */
-  .github-bar {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: -8px 0 24px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    background: var(--paper-line);
-    font-size: 13px;
-    color: var(--ink-soft);
-  }
-  .github-bar.connected { background: var(--income-bg); color: var(--income); }
-  .github-bar.error { background: var(--expense-bg); color: var(--expense); }
-  .github-bar .github-status { flex: 1 1 auto; }
-  .github-btn {
-    background: none;
-    border: 1px solid var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .github-bar.connected .github-btn { border-color: var(--income); color: var(--income); }
-  .github-btn:hover { background: var(--paper); }
-  .github-btn.link {
-    background: none;
-    border: none;
-    text-decoration: underline;
-    padding: 0;
-    font-weight: 400;
-  }
-  .github-connect-form { display: flex; align-items: center; gap: 8px; flex: 1 1 260px; }
-  .github-connect-form input {
-    flex: 1 1 auto;
-    min-width: 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    padding: 7px 9px;
-    border: 1px solid var(--ink-soft);
-    border-radius: 6px;
-    background: var(--paper);
-    color: var(--ink);
-  }
-  .github-connect-form input:focus { outline: none; border-color: var(--gold); }
   .app-footnote {
     max-width: 820px;
     margin: 30px auto 0;
@@ -973,9 +922,6 @@
     </div>
   </div>
 
-  <div class="github-bar" id="github-bar">
-    <span class="github-status" id="github-status">Checking GitHub connection…</span>
-  </div>
 
   <div id="print-report"></div>
 
@@ -2749,6 +2695,10 @@
 
   /* ================= GitHub sync (namespaced) ================= */
   const GithubSync = (function () {
+    // Personal-use-only app: the token is scoped to nothing but the private
+    // afbrh/munny-data repo (Contents: read/write). It's never committed to source
+    // (GitHub's own push protection refuses that) — it lives only in this browser's
+    // local storage, set once via a quiet prompt the first time Save is used.
     const OWNER = 'afbrh';
     const REPO = 'munny-data';
     const PATH = 'data.json';
@@ -2760,8 +2710,19 @@
       try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
     }
 
-    function isConnected() {
-      return !!getToken();
+    function ensureToken() {
+      let token = getToken();
+      if (!token) {
+        token = (window.prompt('Paste your GitHub token to enable saving (stored only in this browser):') || '').trim();
+        if (token) {
+          try { localStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+        }
+      }
+      return token;
+    }
+
+    function forgetToken() {
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
     }
 
     function b64EncodeUnicode(str) {
@@ -2772,20 +2733,27 @@
       return decodeURIComponent(escape(atob(str.replace(/\n/g, ''))));
     }
 
-    async function api(path, options) {
-      const token = getToken();
-      const headers = Object.assign({ 'Accept': 'application/vnd.github+json' }, (options && options.headers) || {});
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-      return fetch('https://api.github.com' + path, Object.assign({}, options, { headers }));
+    async function api(path, options, token) {
+      const headers = Object.assign(
+        { 'Accept': 'application/vnd.github+json' },
+        token ? { 'Authorization': 'Bearer ' + token } : {},
+        (options && options.headers) || {}
+      );
+      // GitHub's Contents API sends Cache-Control: max-age=60 on GETs, which makes the
+      // browser silently reuse a stale copy — always bypass the cache so Load actually loads.
+      return fetch('https://api.github.com' + path, Object.assign({ cache: 'no-store' }, options, { headers }));
     }
 
     async function load() {
-      const resp = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH + '?ref=' + BRANCH);
+      const token = getToken();
+      if (!token) return null; // never connected yet — caller falls back to this page's embedded data
+      const resp = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH + '?ref=' + BRANCH, {}, token);
       if (resp.status === 404) {
         cachedSha = null;
         return null;
       }
       if (resp.status === 401 || resp.status === 403) {
+        forgetToken(); // stored token no longer works — next Save will prompt fresh
         throw new Error('token rejected (' + resp.status + ')');
       }
       if (!resp.ok) {
@@ -2797,8 +2765,24 @@
     }
 
     async function save(dataObj) {
-      const token = getToken();
-      if (!token) throw new Error('not connected');
+      const token = ensureToken();
+      if (!token) throw new Error('cancelled — no token entered');
+
+      // If we haven't loaded under this token yet this session, fetch the current sha
+      // first (a create-vs-update PUT needs it, or GitHub rejects it as a conflict).
+      if (cachedSha === null) {
+        const existing = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH + '?ref=' + BRANCH, {}, token);
+        if (existing.ok) {
+          const existingJson = await existing.json();
+          cachedSha = existingJson.sha;
+        } else if (existing.status === 401 || existing.status === 403) {
+          forgetToken();
+          throw new Error('token rejected (' + existing.status + ')');
+        } else if (existing.status !== 404) {
+          throw new Error('HTTP ' + existing.status);
+        }
+      }
+
       const body = {
         message: 'Update Munny data — ' + new Date().toISOString(),
         content: b64EncodeUnicode(JSON.stringify(dataObj, null, 2)),
@@ -2808,9 +2792,10 @@
       const resp = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH, {
         method: 'PUT',
         body: JSON.stringify(body)
-      });
+      }, token);
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => ({}));
+        if (resp.status === 401 || resp.status === 403) forgetToken();
         throw new Error((errBody && errBody.message) || ('HTTP ' + resp.status));
       }
       const json = await resp.json();
@@ -2818,187 +2803,26 @@
       return true;
     }
 
-    function setStatus(message, success, isError) {
-      const bar = document.getElementById('github-bar');
-      if (!bar) return;
-      bar.classList.remove('connected', 'error');
-      if (isError) {
-        bar.classList.add('error');
-        bar.innerHTML = '<span class="github-status">' + message + '</span>' +
-          '<button type="button" class="github-btn" onclick="GithubSync.showConnectForm()">Reconnect</button>';
-      } else if (success) {
-        renderConnected();
-      } else {
-        bar.innerHTML = '<span class="github-status">' + (message || '') + '</span>';
-      }
-    }
-
-    function renderConnected() {
-      const bar = document.getElementById('github-bar');
-      if (!bar) return;
-      bar.classList.remove('error');
-      bar.classList.add('connected');
-      bar.innerHTML =
-        '<span class="github-status" id="github-status">🟢 Synced to ' + OWNER + '/' + REPO + '</span>' +
-        '<button type="button" class="github-btn link" onclick="GithubSync.disconnect()">Disconnect</button>';
-    }
-
-    function renderDisconnected() {
-      const bar = document.getElementById('github-bar');
-      if (!bar) return;
-      bar.classList.remove('connected', 'error');
-      bar.innerHTML =
-        '<span class="github-status" id="github-status">Not connected to GitHub — using this page\'s built-in data.</span>' +
-        '<button type="button" class="github-btn" onclick="GithubSync.showConnectForm()">Connect GitHub</button>';
-    }
-
-    function showConnectForm() {
-      const bar = document.getElementById('github-bar');
-      if (!bar) return;
-      bar.classList.remove('connected', 'error');
-      bar.innerHTML =
-        '<span class="github-connect-form">' +
-          '<input type="password" id="github-token-field" placeholder="Paste your GitHub token" autocomplete="off">' +
-          '<button type="button" class="github-btn" onclick="GithubSync.connect()">Connect</button>' +
-          '<button type="button" class="github-btn link" onclick="GithubSync.renderDisconnected()">Cancel</button>' +
-        '</span>';
-      const field = document.getElementById('github-token-field');
-      if (field) {
-        field.focus();
-        field.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
-      }
-    }
-
-    async function connect() {
-      const field = document.getElementById('github-token-field');
-      const token = field ? field.value.trim() : '';
-      if (!token) return;
-      try {
-        localStorage.setItem(TOKEN_KEY, token);
-      } catch (e) {
-        setStatus('Could not store the token in this browser.', false, true);
-        return;
-      }
-      const bar = document.getElementById('github-bar');
-      if (bar) bar.innerHTML = '<span class="github-status">Connecting…</span>';
-      try {
-        const remote = await load();
-        if (remote) {
-          applyLoadedData(remote);
-        } else {
-          await save(collectAllData());
-        }
-        renderConnected();
-      } catch (e) {
-        disconnect(false);
-        setStatus('Could not connect: ' + e.message + '. Check the token and try again.', false, true);
-      }
-    }
-
-    function disconnect(rerender) {
-      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
-      cachedSha = null;
-      if (rerender !== false) renderDisconnected();
-    }
-
-    return { isConnected, load, save, setStatus, renderConnected, renderDisconnected, showConnectForm, connect, disconnect };
+    return { load, save };
   })();
 
   /* ================= combined save / load ================= */
-  let fileHandle = null;
-
   function collectAllData() {
     return { budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
   }
 
-  function buildFileContents() {
-    const data = collectAllData();
-    const clone = document.documentElement.cloneNode(true);
-    clone.querySelector('#saved-data').textContent = JSON.stringify(data);
-    clone.querySelector('#income-rows').innerHTML = '';
-    clone.querySelector('#income-source-rows').innerHTML = '';
-    clone.querySelector('#expense-rows').innerHTML = '';
-    clone.querySelector('#table-root').innerHTML = '';
-    clone.querySelector('#food-table-root').innerHTML = '';
-    clone.querySelector('#car-table-root').innerHTML = '';
-    clone.querySelector('#utilities-table-root').innerHTML = '';
-    clone.querySelector('#savings-table-root').innerHTML = '';
-    clone.querySelector('#subscription-rows').innerHTML = '';
-    const cloneStatus = clone.querySelector('#save-status');
-    if (cloneStatus) cloneStatus.textContent = '';
-    return '<!DOCTYPE html>\n' + clone.outerHTML;
-  }
-
-  function buildSuggestedFilename() {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, '0');
-    const mmm = months[now.getMonth()];
-    const yyyy = now.getFullYear();
-    return 'Munny-' + dd + mmm + yyyy + '.html';
-  }
-
-  function downloadFallback(html) {
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = buildSuggestedFilename();
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
   async function saveApp() {
     const status = document.getElementById('save-status');
-
-    if (GithubSync.isConnected()) {
-      status.style.color = 'var(--gold)';
-      status.textContent = 'Saving to GitHub…';
-      try {
-        await GithubSync.save(collectAllData());
-        status.style.color = 'var(--income)';
-        status.textContent = 'Saved to GitHub';
-        setTimeout(() => { status.textContent = ''; }, 3000);
-      } catch (e) {
-        status.style.color = 'var(--expense)';
-        status.textContent = 'GitHub save failed: ' + e.message;
-      }
-      return;
-    }
-
-    const html = buildFileContents();
-
-    if (!window.showSaveFilePicker) {
-      downloadFallback(html);
-      status.style.color = 'var(--gold)';
-      status.textContent = 'Your browser can\'t write to the file directly — downloaded an updated copy instead.';
-      return;
-    }
-
+    status.style.color = 'var(--gold)';
+    status.textContent = 'Saving to GitHub…';
     try {
-      if (!fileHandle) {
-        fileHandle = await window.showSaveFilePicker({
-          suggestedName: buildSuggestedFilename(),
-          types: [{ description: 'HTML file', accept: { 'text/html': ['.html'] } }]
-        });
-      }
-      const writable = await fileHandle.createWritable();
-      await writable.write(html);
-      await writable.close();
+      await GithubSync.save(collectAllData());
       status.style.color = 'var(--income)';
-      status.textContent = 'Saved into the file';
+      status.textContent = 'Saved to GitHub';
       setTimeout(() => { status.textContent = ''; }, 3000);
     } catch (e) {
-      if (e.name === 'AbortError') {
-        status.textContent = '';
-        return;
-      }
       status.style.color = 'var(--expense)';
-      status.textContent = 'Could not save — downloaded a copy instead.';
-      downloadFallback(html);
-      fileHandle = null;
+      status.textContent = 'GitHub save failed: ' + e.message;
     }
   }
 
@@ -3101,28 +2925,19 @@
   }
 
   async function loadApp() {
-    // If connected to GitHub, that's the source of truth — fall back to whatever's
-    // embedded in this page (the last local save) if there's no token yet, or if the
-    // GitHub request fails for any reason.
-    if (GithubSync.isConnected()) {
-      GithubSync.setStatus('Loading latest data from GitHub…');
-      try {
-        const remote = await GithubSync.load();
-        if (remote) {
-          applyLoadedData(remote);
-        } else {
-          applyLoadedData(readEmbeddedData());
-        }
-        GithubSync.setStatus(null, true);
-        return;
-      } catch (e) {
-        applyLoadedData(readEmbeddedData());
-        GithubSync.setStatus('Could not load from GitHub (' + e.message + ') — showing this page\'s last local save instead.', false, true);
-        return;
+    // GitHub (afbrh/munny-data) is always the source of truth — fall back to
+    // whatever's embedded in this page only if the GitHub request itself fails.
+    const status = document.getElementById('save-status');
+    try {
+      const remote = await GithubSync.load();
+      applyLoadedData(remote || readEmbeddedData());
+    } catch (e) {
+      applyLoadedData(readEmbeddedData());
+      if (status) {
+        status.style.color = 'var(--expense)';
+        status.textContent = 'Could not load from GitHub (' + e.message + ') — showing this page\'s last local save instead.';
       }
     }
-    applyLoadedData(readEmbeddedData());
-    GithubSync.renderDisconnected();
   }
 
   loadApp();
