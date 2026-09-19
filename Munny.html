@@ -91,6 +91,22 @@
     cursor: default;
   }
   .save-bar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
+  .theme-toggle-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    background: none;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .theme-toggle-btn:hover { background: var(--paper-line); }
   .save-btn {
     background: var(--ink);
     color: var(--paper);
@@ -926,7 +942,7 @@
 
 <div class="app-shell">
   <div class="save-bar">
-    <button class="save-btn export-btn" id="theme-toggle-btn" onclick="toggleTheme()">Light mode</button>
+    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch to light mode" aria-label="Switch to light mode">&#9728;</button>
     <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
     <button class="save-btn export-btn" id="export-pdf-btn" onclick="exportPdf()" hidden="">Export PDF</button>
     <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
@@ -3114,7 +3130,11 @@
   function syncThemeToggleLabel() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = document.getElementById('theme-toggle-btn');
-    if (btn) btn.textContent = isDark ? 'Light mode' : 'Dark mode';
+    if (!btn) return;
+    btn.innerHTML = isDark ? '&#9728;' : '&#9790;';
+    const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
   }
 
   function toggleTheme() {
