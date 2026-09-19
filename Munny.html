@@ -162,6 +162,18 @@
     user-select: none;
   }
   .save-bar { display: flex; align-items: flex-start; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
+  .brand-mark {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 34px;
+    margin-right: auto;
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+  }
+  .brand-mark img { width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0; }
   .appearance-group {
     display: flex;
     align-items: center;
@@ -170,7 +182,6 @@
     padding: 0 16px;
     border-radius: 17px;
     border: 1.5px solid var(--ink);
-    margin-right: auto;
   }
   .appearance-option {
     display: flex;
@@ -1055,6 +1066,7 @@
 
 <div class="app-shell">
   <div class="save-bar">
+    <div class="brand-mark"><img src="logo.png" alt="Ry's Tools" width="28" height="28"><span>Ry's Tools</span></div>
     <div class="appearance-group" role="radiogroup" aria-label="Appearance">
       <label class="appearance-option"><input type="radio" name="appearance" value="light" onchange="setAppearance('light')">Light</label>
       <label class="appearance-option"><input type="radio" name="appearance" value="dark" onchange="setAppearance('dark')">Dark</label>
