@@ -114,9 +114,11 @@
     align-items: flex-end;
     gap: 5px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: thin;
     flex: 1 1 auto;
     min-width: 0;
+    touch-action: pan-x;
   }
   .tab-btn {
     font-family: var(--font-body);
@@ -1205,7 +1207,7 @@
       </div>
       <div class="tabs-fixed">
         <span class="tab-separator" aria-hidden="true">=</span>
-        <button class="tab-btn tab-btn-summary" data-tab="budget" onclick="switchTab('budget')">Monthly Budget</button>
+        <button class="tab-btn tab-btn-summary" data-tab="budget" onclick="switchTab('budget')">Budget</button>
       </div>
     </div>
   </div>
