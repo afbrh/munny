@@ -499,7 +499,7 @@
     border-bottom: 1px solid var(--paper-line);
   }
   #tab-income .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
-  #tab-income .row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex: 0 0 auto; }
+  #tab-income .row-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex: 1 1 auto; min-width: 0; }
   #tab-income .row input[type="text"] {
     flex: 1;
     min-width: 0;
@@ -548,10 +548,20 @@
     color: var(--income);
   }
   #tab-income .remove-btn {
-    background: none; border: none; color: var(--ink-soft);
-    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px; flex-shrink: 0;
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--paper-line);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    flex-shrink: 0;
   }
-  #tab-income .remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-income .remove-btn:hover { color: var(--danger); background: var(--expense-bg); border-color: var(--danger); }
   #tab-income .add-row-btn {
     margin-top: 10px;
     background: none;
@@ -1649,7 +1659,7 @@
 
       const removeBtn = document.createElement('button');
       removeBtn.className = 'remove-btn';
-      removeBtn.innerHTML = '&times;';
+      removeBtn.textContent = 'Remove';
       removeBtn.setAttribute('aria-label', 'Remove row');
       removeBtn.onclick = () => { row.remove(); recalculate(); };
       actions.appendChild(removeBtn);
