@@ -1002,7 +1002,7 @@
       <div class="header-bar">
         <div>
           <h1>Housing</h1>
-          <p class="subtitle">Compare scenarios line by line — the starred scenario's monthly payment feeds the Monthly Budget's "Housing" line.</p>
+          <p class="subtitle">Compare scenarios line by line — checked scenarios' monthly payments are summed into the Monthly Budget's "Housing" line.</p>
         </div>
         <button class="add-btn" onclick="MortgageApp.addScenario()">+ Add scenario</button>
       </div>
@@ -1011,7 +1011,7 @@
         <div id="table-root"></div>
       </div>
 
-      <p class="footnote">Estimate only — excludes HOA dues and PMI. The starred scenario's total monthly payment syncs automatically into the Monthly Budget tab.</p>
+      <p class="footnote">Estimate only — excludes HOA dues and PMI. Checked scenarios' total monthly payments sync automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
@@ -1020,7 +1020,7 @@
       <div class="header-bar">
         <div>
           <h1>Food</h1>
-          <p class="subtitle">Compare scenarios line by line — the starred scenario's total feeds the Monthly Budget's "Food" line.</p>
+          <p class="subtitle">Compare scenarios line by line — checked scenarios' totals are summed into the Monthly Budget's "Food" line.</p>
         </div>
         <button class="add-btn" onclick="FoodApp.addScenario()">+ Add scenario</button>
       </div>
@@ -1029,7 +1029,7 @@
         <div id="food-table-root"></div>
       </div>
 
-      <p class="footnote">The starred scenario's total food expense syncs automatically into the Monthly Budget tab.</p>
+      <p class="footnote">Checked scenarios' total food expense syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
@@ -1038,7 +1038,7 @@
       <div class="header-bar">
         <div>
           <h1>Car</h1>
-          <p class="subtitle">Compare scenarios line by line — maintenance and registration are yearly amounts, divided into monthly automatically, and the starred scenario's total feeds the Monthly Budget's "Car" line.</p>
+          <p class="subtitle">Compare scenarios line by line — maintenance and registration are yearly amounts, divided into monthly automatically, and checked scenarios' totals are summed into the Monthly Budget's "Car" line.</p>
         </div>
         <button class="add-btn" onclick="CarApp.addScenario()">+ Add scenario</button>
       </div>
@@ -1047,7 +1047,7 @@
         <div id="car-table-root"></div>
       </div>
 
-      <p class="footnote">The starred scenario's total monthly car expense syncs automatically into the Monthly Budget tab.</p>
+      <p class="footnote">Checked scenarios' total monthly car expense syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
@@ -1056,7 +1056,7 @@
       <div class="header-bar">
         <div>
           <h1>Utilities</h1>
-          <p class="subtitle">Compare scenarios line by line — the starred scenario's total feeds the Monthly Budget's "Utilities" line.</p>
+          <p class="subtitle">Compare scenarios line by line — checked scenarios' totals are summed into the Monthly Budget's "Utilities" line.</p>
         </div>
         <button class="add-btn" onclick="UtilitiesApp.addScenario()">+ Add scenario</button>
       </div>
@@ -1065,7 +1065,7 @@
         <div id="utilities-table-root"></div>
       </div>
 
-      <p class="footnote">The starred scenario's total utilities expense syncs automatically into the Monthly Budget tab.</p>
+      <p class="footnote">Checked scenarios' total utilities expense syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
 
@@ -1074,7 +1074,7 @@
       <div class="header-bar">
         <div>
           <h1>Savings</h1>
-          <p class="subtitle">Enter each category's yearly goal — it's automatically divided by 12, and the starred scenario's monthly contribution feeds the Monthly Budget's "Savings" line.</p>
+          <p class="subtitle">Enter each category's yearly goal — it's automatically divided by 12, and checked scenarios' monthly contributions are summed into the Monthly Budget's "Savings" line.</p>
         </div>
         <button class="add-btn" onclick="SavingsApp.addScenario()">+ Add scenario</button>
       </div>
@@ -1453,11 +1453,15 @@
       { id: 's2', name: 'Scenario B', values: Object.assign({}, DEFAULTS, { term: '15' }) }
     ];
     let nextLetter = 67;
-    let primaryId = 's1';
+    let primaryIds = ['s1'];
 
-    function setPrimary(id) {
+    function togglePrimary(id, checked) {
       if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
+      if (checked) {
+        if (!primaryIds.includes(id)) primaryIds.push(id);
+      } else {
+        primaryIds = primaryIds.filter(pid => pid !== id);
+      }
       render();
     }
 
@@ -1482,7 +1486,8 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
+      primaryIds = primaryIds.filter(pid => pid !== id);
+      if (!primaryIds.length) primaryIds = [scenarios[0].id];
       render();
     }
 
@@ -1499,7 +1504,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = scenario.id === primaryId;
+        const isPrimary = primaryIds.includes(scenario.id);
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -1509,15 +1514,14 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s monthly payment as the Monthly Budget "Housing" amount';
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'primary-scenario';
-        radio.checked = isPrimary;
-        radio.addEventListener('change', () => setPrimary(scenario.id));
+        toggle.title = 'Include this scenario\'s monthly payment in the Monthly Budget "Housing" amount';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isPrimary;
+        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
         const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
-        toggle.appendChild(radio);
+        toggleText.textContent = isPrimary ? '✓ Used in budget' : 'Use in budget';
+        toggle.appendChild(checkbox);
         toggle.appendChild(toggleText);
         cell.appendChild(toggle);
 
@@ -1659,6 +1663,7 @@
     }
 
     function recalculateAll() {
+      let budgetTotal = 0;
       scenarios.forEach(scenario => {
         const v = scenario.values;
         const loanAmount = parseFloat(v.loanAmount) || 0;
@@ -1703,25 +1708,31 @@
         setText('renters-insurance-monthly', currency(rentersInsuranceMonthly));
         setText('monthly-payment', currency(totalMonthly));
 
-        if (scenario.id === primaryId) {
-          BudgetApp.setLockedAmount('house-payment', totalMonthly);
+        if (primaryIds.includes(scenario.id)) {
+          budgetTotal += totalMonthly;
         }
       });
+      BudgetApp.setLockedAmount('house-payment', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
-          ? state.primaryId
-          : scenarios[0].id;
+        if (Array.isArray(state.primaryIds)) {
+          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          if (!primaryIds.length) primaryIds = [scenarios[0].id];
+        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
+          primaryIds = [state.primaryId]; // migrate old single-primary format
+        } else {
+          primaryIds = [scenarios[0].id];
+        }
       } else {
-        primaryId = scenarios[0].id;
+        primaryIds = [scenarios[0].id];
       }
       render();
     }
@@ -1751,7 +1762,7 @@
           const totalMonthly = monthlyPayment + taxMonthly + insuranceMonthly + rentMonthly + rentersInsuranceMonthly;
           return {
             name: scenario.name,
-            isPrimary: scenario.id === primaryId,
+            isPrimary: primaryIds.includes(scenario.id),
             rows: [
               { label: 'Loan amount', value: currency(loanAmount) },
               { label: 'Interest rate', value: annualRate + '%' },
@@ -1769,7 +1780,7 @@
       };
     }
 
-    return { addScenario, getState, setState, setPrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary, getSummary };
   })();
 
   /* ================= Food app (namespaced) ================= */
@@ -1784,7 +1795,7 @@
       { id: 'f1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
     ];
     let nextLetter = 66; // 'B'
-    let primaryId = 'f1';
+    let primaryIds = ['f1'];
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1797,9 +1808,13 @@
       return e;
     }
 
-    function setPrimary(id) {
+    function togglePrimary(id, checked) {
       if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
+      if (checked) {
+        if (!primaryIds.includes(id)) primaryIds.push(id);
+      } else {
+        primaryIds = primaryIds.filter(pid => pid !== id);
+      }
       render();
     }
 
@@ -1813,7 +1828,8 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
+      primaryIds = primaryIds.filter(pid => pid !== id);
+      if (!primaryIds.length) primaryIds = [scenarios[0].id];
       render();
     }
 
@@ -1830,7 +1846,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = scenario.id === primaryId;
+        const isPrimary = primaryIds.includes(scenario.id);
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -1840,15 +1856,14 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total as the Monthly Budget "Food" amount';
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'food-primary-scenario';
-        radio.checked = isPrimary;
-        radio.addEventListener('change', () => setPrimary(scenario.id));
+        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Food" amount';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isPrimary;
+        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
         const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
-        toggle.appendChild(radio);
+        toggleText.textContent = isPrimary ? '✓ Used in budget' : 'Use in budget';
+        toggle.appendChild(checkbox);
         toggle.appendChild(toggleText);
         cell.appendChild(toggle);
 
@@ -1925,6 +1940,7 @@
     }
 
     function recalculateAll() {
+      let budgetTotal = 0;
       scenarios.forEach(scenario => {
         const v = scenario.values;
         const groceries = parseFloat(v.groceries) || 0;
@@ -1934,23 +1950,29 @@
         const totalEl = document.getElementById('food-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (scenario.id === primaryId) {
-          BudgetApp.setLockedAmount('food', total);
+        if (primaryIds.includes(scenario.id)) {
+          budgetTotal += total;
         }
       });
+      BudgetApp.setLockedAmount('food', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
-          ? state.primaryId
-          : scenarios[0].id;
+        if (Array.isArray(state.primaryIds)) {
+          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          if (!primaryIds.length) primaryIds = [scenarios[0].id];
+        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
+          primaryIds = [state.primaryId];
+        } else {
+          primaryIds = [scenarios[0].id];
+        }
       } else if (state && (state.groceries !== undefined || state.eatingOut !== undefined)) {
         // Migrate the older single-scenario format.
         scenarios = [{
@@ -1958,10 +1980,10 @@
           name: 'Scenario A',
           values: { groceries: parseFloat(state.groceries) || 0, eatingOut: parseFloat(state.eatingOut) || 0 }
         }];
-        primaryId = 'f1';
+        primaryIds = ['f1'];
       } else {
         scenarios = [{ id: 'f1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryId = 'f1';
+        primaryIds = ['f1'];
       }
       render();
     }
@@ -1976,12 +1998,12 @@
             total += val;
             return { label: f.label, value: currency(val) };
           });
-          return { name: scenario.name, isPrimary: scenario.id === primaryId, rows, totalLabel: 'Total food expense', total: currency(total) };
+          return { name: scenario.name, isPrimary: primaryIds.includes(scenario.id), rows, totalLabel: 'Total food expense', total: currency(total) };
         })
       };
     }
 
-    return { addScenario, getState, setState, setPrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary, getSummary };
   })();
 
   /* ================= Car app (namespaced) ================= */
@@ -1999,7 +2021,7 @@
       { id: 'c1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
     ];
     let nextLetter = 66; // 'B'
-    let primaryId = 'c1';
+    let primaryIds = ['c1'];
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2012,9 +2034,13 @@
       return e;
     }
 
-    function setPrimary(id) {
+    function togglePrimary(id, checked) {
       if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
+      if (checked) {
+        if (!primaryIds.includes(id)) primaryIds.push(id);
+      } else {
+        primaryIds = primaryIds.filter(pid => pid !== id);
+      }
       render();
     }
 
@@ -2028,7 +2054,8 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
+      primaryIds = primaryIds.filter(pid => pid !== id);
+      if (!primaryIds.length) primaryIds = [scenarios[0].id];
       render();
     }
 
@@ -2045,7 +2072,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = scenario.id === primaryId;
+        const isPrimary = primaryIds.includes(scenario.id);
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -2055,15 +2082,14 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total as the Monthly Budget "Car" amount';
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'car-primary-scenario';
-        radio.checked = isPrimary;
-        radio.addEventListener('change', () => setPrimary(scenario.id));
+        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Car" amount';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isPrimary;
+        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
         const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
-        toggle.appendChild(radio);
+        toggleText.textContent = isPrimary ? '✓ Used in budget' : 'Use in budget';
+        toggle.appendChild(checkbox);
         toggle.appendChild(toggleText);
         cell.appendChild(toggle);
 
@@ -2143,6 +2169,7 @@
     }
 
     function recalculateAll() {
+      let budgetTotal = 0;
       scenarios.forEach(scenario => {
         const v = scenario.values;
         let total = 0;
@@ -2154,26 +2181,32 @@
         const totalEl = document.getElementById('car-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (scenario.id === primaryId) {
-          BudgetApp.setLockedAmount('car', total);
+        if (primaryIds.includes(scenario.id)) {
+          budgetTotal += total;
         }
       });
+      BudgetApp.setLockedAmount('car', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
-          ? state.primaryId
-          : scenarios[0].id;
+        if (Array.isArray(state.primaryIds)) {
+          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          if (!primaryIds.length) primaryIds = [scenarios[0].id];
+        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
+          primaryIds = [state.primaryId];
+        } else {
+          primaryIds = [scenarios[0].id];
+        }
       } else {
         scenarios = [{ id: 'c1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryId = 'c1';
+        primaryIds = ['c1'];
       }
       render();
     }
@@ -2188,12 +2221,12 @@
             total += f.annual ? val / 12 : val;
             return { label: f.label + (f.annual ? ' (per year)' : ''), value: currency(val) };
           });
-          return { name: scenario.name, isPrimary: scenario.id === primaryId, rows, totalLabel: 'Total car expense (monthly)', total: currency(total) };
+          return { name: scenario.name, isPrimary: primaryIds.includes(scenario.id), rows, totalLabel: 'Total car expense (monthly)', total: currency(total) };
         })
       };
     }
 
-    return { addScenario, getState, setState, setPrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary, getSummary };
   })();
 
   /* ================= Utilities app (namespaced) ================= */
@@ -2211,7 +2244,7 @@
       { id: 'u1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
     ];
     let nextLetter = 66; // 'B'
-    let primaryId = 'u1';
+    let primaryIds = ['u1'];
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2224,9 +2257,13 @@
       return e;
     }
 
-    function setPrimary(id) {
+    function togglePrimary(id, checked) {
       if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
+      if (checked) {
+        if (!primaryIds.includes(id)) primaryIds.push(id);
+      } else {
+        primaryIds = primaryIds.filter(pid => pid !== id);
+      }
       render();
     }
 
@@ -2240,7 +2277,8 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
+      primaryIds = primaryIds.filter(pid => pid !== id);
+      if (!primaryIds.length) primaryIds = [scenarios[0].id];
       render();
     }
 
@@ -2257,7 +2295,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = scenario.id === primaryId;
+        const isPrimary = primaryIds.includes(scenario.id);
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -2267,15 +2305,14 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total as the Monthly Budget "Utilities" amount';
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'utilities-primary-scenario';
-        radio.checked = isPrimary;
-        radio.addEventListener('change', () => setPrimary(scenario.id));
+        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Utilities" amount';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isPrimary;
+        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
         const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
-        toggle.appendChild(radio);
+        toggleText.textContent = isPrimary ? '✓ Used in budget' : 'Use in budget';
+        toggle.appendChild(checkbox);
         toggle.appendChild(toggleText);
         cell.appendChild(toggle);
 
@@ -2352,6 +2389,7 @@
     }
 
     function recalculateAll() {
+      let budgetTotal = 0;
       scenarios.forEach(scenario => {
         const v = scenario.values;
         let total = 0;
@@ -2360,26 +2398,32 @@
         const totalEl = document.getElementById('utilities-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (scenario.id === primaryId) {
-          BudgetApp.setLockedAmount('utilities', total);
+        if (primaryIds.includes(scenario.id)) {
+          budgetTotal += total;
         }
       });
+      BudgetApp.setLockedAmount('utilities', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
-          ? state.primaryId
-          : scenarios[0].id;
+        if (Array.isArray(state.primaryIds)) {
+          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          if (!primaryIds.length) primaryIds = [scenarios[0].id];
+        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
+          primaryIds = [state.primaryId];
+        } else {
+          primaryIds = [scenarios[0].id];
+        }
       } else {
         scenarios = [{ id: 'u1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryId = 'u1';
+        primaryIds = ['u1'];
       }
       render();
     }
@@ -2394,12 +2438,12 @@
             total += val;
             return { label: f.label, value: currency(val) };
           });
-          return { name: scenario.name, isPrimary: scenario.id === primaryId, rows, totalLabel: 'Total utilities expense', total: currency(total) };
+          return { name: scenario.name, isPrimary: primaryIds.includes(scenario.id), rows, totalLabel: 'Total utilities expense', total: currency(total) };
         })
       };
     }
 
-    return { addScenario, getState, setState, setPrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary, getSummary };
   })();
 
   /* ================= Savings app (namespaced) ================= */
@@ -2418,7 +2462,7 @@
       { id: 'sv1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
     ];
     let nextLetter = 66; // 'B'
-    let primaryId = 'sv1';
+    let primaryIds = ['sv1'];
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2431,9 +2475,13 @@
       return e;
     }
 
-    function setPrimary(id) {
+    function togglePrimary(id, checked) {
       if (!scenarios.some(s => s.id === id)) return;
-      primaryId = id;
+      if (checked) {
+        if (!primaryIds.includes(id)) primaryIds.push(id);
+      } else {
+        primaryIds = primaryIds.filter(pid => pid !== id);
+      }
       render();
     }
 
@@ -2447,7 +2495,8 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      if (primaryId === id) primaryId = scenarios[0].id;
+      primaryIds = primaryIds.filter(pid => pid !== id);
+      if (!primaryIds.length) primaryIds = [scenarios[0].id];
       render();
     }
 
@@ -2464,7 +2513,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = scenario.id === primaryId;
+        const isPrimary = primaryIds.includes(scenario.id);
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -2474,15 +2523,14 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Use this scenario\'s total as the Monthly Budget "Savings" amount';
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'savings-primary-scenario';
-        radio.checked = isPrimary;
-        radio.addEventListener('change', () => setPrimary(scenario.id));
+        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Savings" amount';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isPrimary;
+        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
         const toggleText = document.createElement('span');
-        toggleText.textContent = isPrimary ? '★ Used in budget' : 'Use in budget';
-        toggle.appendChild(radio);
+        toggleText.textContent = isPrimary ? '✓ Used in budget' : 'Use in budget';
+        toggle.appendChild(checkbox);
         toggle.appendChild(toggleText);
         cell.appendChild(toggle);
 
@@ -2583,6 +2631,7 @@
     }
 
     function recalculateAll() {
+      let budgetTotal = 0;
       scenarios.forEach(scenario => {
         const v = scenario.values;
         let yearlyTotal = 0;
@@ -2594,26 +2643,32 @@
         const monthlyEl = document.getElementById('savings-monthly-' + scenario.id);
         if (monthlyEl) monthlyEl.textContent = currency(monthlyTotal);
 
-        if (scenario.id === primaryId) {
-          BudgetApp.setLockedAmount('savings', monthlyTotal);
+        if (primaryIds.includes(scenario.id)) {
+          budgetTotal += monthlyTotal;
         }
       });
+      BudgetApp.setLockedAmount('savings', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        primaryId = (state.primaryId && scenarios.some(s => s.id === state.primaryId))
-          ? state.primaryId
-          : scenarios[0].id;
+        if (Array.isArray(state.primaryIds)) {
+          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          if (!primaryIds.length) primaryIds = [scenarios[0].id];
+        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
+          primaryIds = [state.primaryId];
+        } else {
+          primaryIds = [scenarios[0].id];
+        }
       } else {
         scenarios = [{ id: 'sv1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryId = 'sv1';
+        primaryIds = ['sv1'];
       }
       render();
     }
@@ -2629,12 +2684,12 @@
             return { label: f.label + ' (per year)', value: currency(val) };
           });
           rows.push({ label: 'Total yearly goal', value: currency(yearlyTotal) });
-          return { name: scenario.name, isPrimary: scenario.id === primaryId, rows, totalLabel: 'Monthly contribution', total: currency(yearlyTotal / 12) };
+          return { name: scenario.name, isPrimary: primaryIds.includes(scenario.id), rows, totalLabel: 'Monthly contribution', total: currency(yearlyTotal / 12) };
         })
       };
     }
 
-    return { addScenario, getState, setState, setPrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary, getSummary };
   })();
 
   /* ================= Subscriptions app (namespaced) ================= */
