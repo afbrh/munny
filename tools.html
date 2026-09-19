@@ -407,17 +407,18 @@
   #tab-budget .row.locked input[type="number"] { color: var(--gold); cursor: pointer; border-radius: 3px; }
   #tab-budget .row.locked input[type="number"]:hover { border-bottom: 1px solid var(--gold); }
   #tab-budget .row.locked .lock-icon { font-size: 13px; color: var(--gold); margin-right: 2px; flex-shrink: 0; }
-  #tab-budget .amount-wrap { display: flex; align-items: center; font-family: var(--font-mono); font-size: 15px; }
-  #tab-budget .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
+  #tab-budget .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; }
+  #tab-budget .amount-wrap span { color: var(--ink-soft); margin-right: 1px; }
   #tab-budget .row input[type="number"] {
-    width: 90px;
+    width: 4ch;
+    min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
     font-size: 15px;
     color: var(--ink);
-    padding: 4px 2px;
+    padding: 4px 0;
     -moz-appearance: textfield;
   }
   #tab-budget .row input[type="number"]::-webkit-outer-spin-button,
@@ -1496,6 +1497,15 @@
       return total;
     }
 
+    // Sizes each amount input to fit its own digits, so the "$" sits snug against the
+    // number instead of floating at the far left of an oversized, right-aligned box.
+    function sizeAmountInputs() {
+      document.querySelectorAll('#tab-budget input[type="number"]').forEach(input => {
+        const len = Math.max(String(input.value || '').length, String(input.placeholder || '').length, 1);
+        input.style.width = len + 'ch';
+      });
+    }
+
     function recalculate() {
       const incomeTotal = sumSection('income');
       const expenseTotal = sumSection('expense');
@@ -1510,6 +1520,8 @@
       const netValue = document.getElementById('net-value');
       netValue.textContent = (net < 0 ? '-' : '') + currency(Math.abs(net));
       netLine.classList.toggle('negative', net < 0);
+
+      sizeAmountInputs();
     }
 
     function collectData() {
