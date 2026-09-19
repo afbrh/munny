@@ -98,6 +98,48 @@
   .save-btn.export-btn:hover { opacity: 1; background: var(--paper-line); }
   .save-status { font-size: 13px; color: var(--income); min-height: 16px; }
   #print-report { display: none; }
+
+  /* ---------- sign-in gate ---------- */
+  .app-shell.gated { filter: grayscale(1) opacity(0.35); pointer-events: none; user-select: none; }
+  #signin-gate {
+    position: fixed;
+    inset: 0;
+    background: rgba(35, 38, 31, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  #signin-gate .signin-card {
+    background: var(--paper);
+    border-radius: 14px;
+    padding: 44px 40px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+  #signin-gate .app-name { font-family: 'Lora', serif; font-weight: 600; font-size: 20px; margin-bottom: 10px; }
+  #signin-gate .app-name span { color: var(--gold); }
+  #signin-gate h1 { font-family: 'Lora', serif; font-weight: 600; font-size: 24px; margin: 0 0 10px; letter-spacing: -0.01em; }
+  #signin-gate p { color: var(--ink-soft); font-size: 14px; margin: 0 0 26px; line-height: 1.5; }
+  #signin-gate .signin-btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 14px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #signin-gate .signin-btn:hover { opacity: 0.88; }
+  #signin-gate .gate-status { margin-top: 16px; font-size: 13px; min-height: 18px; color: var(--ink-soft); }
+  #signin-gate .gate-status.error { color: var(--danger); }
   .app-footnote {
     max-width: 820px;
     margin: 30px auto 0;
@@ -902,7 +944,7 @@
 </style>
 </head>
 <body>
-<script id="saved-data" type="application/json">{"budget":{"income":[{"label":"Income","amount":"10374.00","locked":"income"}],"expense":[{"label":"Housing","amount":"4950.15","locked":"house-payment"},{"label":"Food","amount":"1000.00","locked":"food"},{"label":"Car","amount":"350.00","locked":"car"},{"label":"Utilities","amount":"0.00","locked":"utilities"},{"label":"Savings","amount":"0.00","locked":"savings"},{"label":"Subscriptions","amount":""}]},"income":{"sources":[{"name":"Ryan Paycheck","amount":"3130","frequency":"semimonthly"},{"name":"Alyssa Paycheck","amount":"2057","frequency":"semimonthly"}]},"mortgage":{"scenarios":[{"id":"s1","name":"Scenario A","values":{"loanAmount":600000,"rate":7,"term":"30","tax":10000,"insurance":1500}}],"nextLetter":67,"primaryId":"s1"},"food":{"scenarios":[{"id":"f1","name":"Scenario A","values":{"groceries":800,"eatingOut":200}}],"nextLetter":66,"primaryId":"f1"},"car":{"scenarios":[{"id":"c1","name":"Scenario A","values":{"loan":0,"gas":200,"insurance":150,"maintenance":0,"registration":0}}],"nextLetter":66,"primaryId":"c1"},"utilities":{"scenarios":[{"id":"u1","name":"Scenario A","values":{"electricity":0,"gasHeating":0,"water":0,"internet":0,"mobilePhone":0}}],"nextLetter":66,"primaryId":"u1"},"savings":{"scenarios":[{"id":"sv1","name":"Scenario A","values":{"retirement":0,"emergency":0,"vacation":0,"children":0,"homeMaintenance":0,"general":0}}],"nextLetter":66,"primaryId":"sv1"}}</script>
+<script id="saved-data" type="application/json"></script>
 
 <div class="app-shell">
   <div class="tab-bar">
@@ -919,7 +961,6 @@
     <div class="save-bar">
       <button class="save-btn" onclick="saveApp()">Save</button>
       <button class="save-btn export-btn" onclick="exportPdf()">Export PDF</button>
-      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
       <span class="save-status" id="save-status"></span>
     </div>
   </div>
@@ -1434,12 +1475,12 @@
       { key: 'tax', label: 'Property tax', type: 'currency', hint: 'per year' },
       { key: 'insurance', label: 'Home insurance', type: 'currency', hint: 'per year' }
     ];
-    const DEFAULTS = { loanAmount: 320000, rate: 6.5, term: '30', tax: 4800, insurance: 1500 };
+    const DEFAULTS = { loanAmount: 0, rate: 0, term: '30', tax: 0, insurance: 0 };
     const TERM_OPTIONS = [30, 20, 15, 10];
 
     let scenarios = [
       { id: 's1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) },
-      { id: 's2', name: 'Scenario B', values: Object.assign({}, DEFAULTS, { rate: 6.0, term: '15' }) }
+      { id: 's2', name: 'Scenario B', values: Object.assign({}, DEFAULTS, { term: '15' }) }
     ];
     let nextLetter = 67;
     let primaryId = 's1';
@@ -2746,7 +2787,9 @@
     async function api(url, options) {
       if (!accessToken) throw new Error('not signed in');
       const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
-      return fetch(url, Object.assign({ cache: 'no-store' }, options, { headers }));
+      const resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers }));
+      if (resp.status === 401) accessToken = null; // expired/revoked — isSignedIn() will now correctly report false
+      return resp;
     }
 
     async function findFileId() {
@@ -2827,43 +2870,51 @@
     return { budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
   }
 
-  function setGoogleSignedInUi(signedIn) {
-    const btn = document.getElementById('google-signin-btn');
-    if (btn) btn.hidden = signedIn;
+  function setAppInteractive(interactive) {
+    const shell = document.querySelector('.app-shell');
+    if (!shell) return;
+    shell.classList.toggle('gated', !interactive);
+    if (interactive) shell.removeAttribute('inert');
+    else shell.setAttribute('inert', '');
+  }
+
+  function showSigninGate() {
+    const gate = document.getElementById('signin-gate');
+    if (gate) gate.hidden = false;
+    setAppInteractive(false);
+  }
+
+  function hideSigninGate() {
+    const gate = document.getElementById('signin-gate');
+    if (gate) gate.hidden = true;
+    setAppInteractive(true);
   }
 
   async function handleGoogleSignIn() {
-    const status = document.getElementById('save-status');
-    status.style.color = 'var(--gold)';
-    status.textContent = 'Signing in to Google…';
+    const status = document.getElementById('gate-status');
+    if (status) { status.className = 'gate-status'; status.textContent = 'Signing in to Google…'; }
     try {
       await GoogleDriveSync.signIn();
-      setGoogleSignedInUi(true);
-      status.textContent = 'Loading your data from Drive…';
+      if (status) status.textContent = 'Loading your data from Drive…';
       const remote = await GoogleDriveSync.load();
-      if (remote) {
-        applyLoadedData(remote);
-      } else {
-        await GoogleDriveSync.save(collectAllData());
-      }
-      status.style.color = 'var(--income)';
-      status.textContent = 'Signed in to Google Drive';
-      setTimeout(() => { status.textContent = ''; }, 3000);
+      applyLoadedData(remote); // null (brand-new Drive file) leaves every field at its zeroed default
+      hideSigninGate();
     } catch (e) {
-      status.style.color = 'var(--expense)';
-      status.textContent = 'Google sign-in failed: ' + e.message;
+      if (status) { status.className = 'gate-status error'; status.textContent = 'Google sign-in failed: ' + e.message; }
     }
   }
 
   async function saveApp() {
     const status = document.getElementById('save-status');
+    if (!GoogleDriveSync.isSignedIn()) {
+      // Token expired or was never established — re-show the gate rather than
+      // silently retrying, so it's obvious a fresh sign-in is needed.
+      showSigninGate();
+      return;
+    }
     status.style.color = 'var(--gold)';
     status.textContent = 'Saving to Google Drive…';
     try {
-      if (!GoogleDriveSync.isSignedIn()) {
-        await GoogleDriveSync.signIn();
-        setGoogleSignedInUi(true);
-      }
       await GoogleDriveSync.save(collectAllData());
       status.style.color = 'var(--income)';
       status.textContent = 'Saved to Google Drive';
@@ -2963,25 +3014,25 @@
     SubscriptionsApp.setState(saved ? saved.subscriptions : null);
   }
 
-  function readEmbeddedData() {
-    try {
-      const raw = document.getElementById('saved-data').textContent.trim();
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
   function loadApp() {
     // Google's sign-in popup needs a real click, so it can't happen automatically on
-    // page load — show this page's last-saved snapshot first; clicking "Sign in with
-    // Google" (or Save) pulls/pushes the real thing via Drive.
-    applyLoadedData(readEmbeddedData());
-    setGoogleSignedInUi(false);
+    // page load. Everything stays at its zeroed default and locked behind the gate
+    // until "Sign in with Google" loads the real data from Drive.
+    applyLoadedData(null);
+    showSigninGate();
   }
 
   loadApp();
 </script>
 
+<div id="signin-gate">
+  <div class="signin-card">
+    <div class="app-name">Mu<span>nn</span>y</div>
+    <h1>Sign in to continue</h1>
+    <p>Your budget lives in your own Google Drive. Sign in to load it — everything stays hidden until then.</p>
+    <button type="button" class="signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
+    <div class="gate-status" id="gate-status"></div>
+  </div>
+</div>
 
 </body></html>
