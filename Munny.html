@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script>(function(){try{var t=localStorage.getItem('munny_theme');if(t!=='light'){document.documentElement.setAttribute('data-theme','dark');}var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){document.documentElement.setAttribute('data-skin',s);}}catch(e){}})();</script>
+<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'&&a!=='elder'&&a!=='machina'){var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){a=s;}else{a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}}if(a==='elder'||a==='machina'){document.documentElement.setAttribute('data-skin',a);}else if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Munny</title>
@@ -137,37 +137,31 @@
     cursor: default;
   }
   .save-bar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
-  .theme-toggle-btn {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border-radius: 50%;
-    background: none;
-    border: 1.5px solid var(--ink);
-    color: var(--ink);
-    font-size: 15px;
-    line-height: 1;
-    display: inline-flex;
+  .appearance-group {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  .theme-toggle-btn:hover { background: var(--paper-line); }
-  .theme-toggle-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .theme-toggle-btn:disabled:hover { background: none; }
-  .skin-select {
+    gap: 14px;
     height: 34px;
-    padding: 0 10px;
+    padding: 0 16px;
     border-radius: 17px;
-    background: none;
     border: 1.5px solid var(--ink);
-    color: var(--ink);
+  }
+  .appearance-option {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
+    color: var(--ink-soft);
     cursor: pointer;
   }
-  .skin-select:hover { background: var(--paper-line); }
+  .appearance-option input {
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--gold);
+  }
+  .appearance-option:has(input:checked) { color: var(--ink); }
   .save-btn {
     background: var(--ink);
     color: var(--paper);
@@ -1018,12 +1012,12 @@
 
 <div class="app-shell">
   <div class="save-bar">
-    <select class="skin-select" id="skin-select" onchange="setSkin(this.value)" title="Theme" aria-label="Theme">
-      <option value="none">None</option>
-      <option value="elder">Elder</option>
-      <option value="machina">Machina</option>
-    </select>
-    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch to light mode" aria-label="Switch to light mode">&#9728;</button>
+    <div class="appearance-group" role="radiogroup" aria-label="Appearance">
+      <label class="appearance-option"><input type="radio" name="appearance" value="light" onchange="setAppearance('light')">Light</label>
+      <label class="appearance-option"><input type="radio" name="appearance" value="dark" onchange="setAppearance('dark')">Dark</label>
+      <label class="appearance-option"><input type="radio" name="appearance" value="elder" onchange="setAppearance('elder')">Elder</label>
+      <label class="appearance-option"><input type="radio" name="appearance" value="machina" onchange="setAppearance('machina')">Machina</label>
+    </div>
     <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
     <button class="save-btn export-btn" id="export-pdf-btn" onclick="exportPdf()" hidden="">Export PDF</button>
     <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
@@ -3228,44 +3222,39 @@
     SubscriptionsApp.setState(saved ? saved.subscriptions : null);
   }
 
-  function syncThemeToggleLabel() {
-    const skin = document.documentElement.getAttribute('data-skin');
-    const hasSkin = skin === 'elder' || skin === 'machina';
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const btn = document.getElementById('theme-toggle-btn');
-    if (!btn) return;
-    btn.innerHTML = isDark ? '&#9728;' : '&#9790;';
-    const label = hasSkin
-      ? 'Light/dark mode is fixed by the ' + (skin === 'elder' ? 'Elder' : 'Machina') + ' theme'
-      : (isDark ? 'Switch to light mode' : 'Switch to dark mode');
-    btn.title = label;
-    btn.setAttribute('aria-label', label);
-    btn.disabled = hasSkin;
-  }
-
-  function toggleTheme() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    if (isDark) {
+  function setAppearance(appearance) {
+    if (appearance === 'elder' || appearance === 'machina') {
+      document.documentElement.setAttribute('data-skin', appearance);
       document.documentElement.removeAttribute('data-theme');
-      try { localStorage.setItem('munny_theme', 'light'); } catch (e) {}
-    } else {
+    } else if (appearance === 'dark') {
+      document.documentElement.removeAttribute('data-skin');
       document.documentElement.setAttribute('data-theme', 'dark');
-      try { localStorage.setItem('munny_theme', 'dark'); } catch (e) {}
+    } else {
+      appearance = 'light';
+      document.documentElement.removeAttribute('data-skin');
+      document.documentElement.removeAttribute('data-theme');
     }
-    syncThemeToggleLabel();
+    try { localStorage.setItem('munny_appearance', appearance); } catch (e) {}
+    syncAppearanceRadios(appearance);
   }
 
-  function setSkin(skin) {
-    if (skin === 'elder' || skin === 'machina') {
-      document.documentElement.setAttribute('data-skin', skin);
-    } else {
-      document.documentElement.removeAttribute('data-skin');
-      skin = 'none';
+  function syncAppearanceRadios(appearance) {
+    const radio = document.querySelector('input[name="appearance"][value="' + appearance + '"]');
+    if (radio) radio.checked = true;
+  }
+
+  function currentAppearance() {
+    let appearance;
+    try { appearance = localStorage.getItem('munny_appearance'); } catch (e) {}
+    if (appearance === 'light' || appearance === 'dark' || appearance === 'elder' || appearance === 'machina') {
+      return appearance;
     }
-    try { localStorage.setItem('munny_skin', skin); } catch (e) {}
-    const select = document.getElementById('skin-select');
-    if (select) select.value = skin;
-    syncThemeToggleLabel();
+    // Migrate from the older separate dark-mode / skin toggles, if present.
+    let skin, theme;
+    try { skin = localStorage.getItem('munny_skin'); } catch (e) {}
+    if (skin === 'elder' || skin === 'machina') return skin;
+    try { theme = localStorage.getItem('munny_theme'); } catch (e) {}
+    return theme === 'light' ? 'light' : 'dark';
   }
 
   function loadApp() {
@@ -3274,10 +3263,7 @@
     // (or Save) to load/push the real thing via Drive.
     applyLoadedData(null);
     setGoogleSignedInUi(false);
-    const currentSkin = document.documentElement.getAttribute('data-skin') || 'none';
-    const select = document.getElementById('skin-select');
-    if (select) select.value = currentSkin;
-    syncThemeToggleLabel();
+    setAppearance(currentAppearance());
   }
 
   loadApp();
