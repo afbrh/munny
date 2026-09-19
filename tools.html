@@ -521,17 +521,18 @@
     max-width: 118px;
   }
   #tab-income .freq-select:focus { outline: none; }
-  #tab-income .amount-wrap { display: flex; align-items: center; font-family: var(--font-mono); font-size: 15px; flex-shrink: 0; }
-  #tab-income .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
+  #tab-income .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; flex-shrink: 0; }
+  #tab-income .amount-wrap span { color: var(--ink-soft); margin-right: 1px; }
   #tab-income .row input[type="number"] {
-    width: 84px;
+    width: 4ch;
+    min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
     font-size: 15px;
     color: var(--ink);
-    padding: 4px 2px;
+    padding: 4px 0;
     -moz-appearance: textfield;
   }
   #tab-income .row input[type="number"]::-webkit-outer-spin-button,
@@ -629,17 +630,18 @@
     padding: 4px 2px;
   }
   #tab-subscriptions .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-subscriptions .amount-wrap { display: flex; align-items: center; font-family: var(--font-mono); font-size: 15px; }
-  #tab-subscriptions .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
+  #tab-subscriptions .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; }
+  #tab-subscriptions .amount-wrap span { color: var(--ink-soft); margin-right: 1px; }
   #tab-subscriptions .row input[type="number"] {
-    width: 90px;
+    width: 4ch;
+    min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
     font-size: 15px;
     color: var(--ink);
-    padding: 4px 2px;
+    padding: 4px 0;
     -moz-appearance: textfield;
   }
   #tab-subscriptions .row input[type="number"]::-webkit-outer-spin-button,
@@ -741,16 +743,17 @@
   #tab-mortgage .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; }
   #tab-mortgage .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
   #tab-mortgage .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
-  #tab-mortgage .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-mortgage .field span { color: var(--ink-soft); margin: 0 1px; }
   #tab-mortgage .field input[type="number"] {
-    width: 78px;
+    width: 4ch;
+    min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
-    padding: 4px 2px;
+    padding: 4px 0;
     -moz-appearance: textfield;
   }
   #tab-mortgage .field input::-webkit-outer-spin-button,
@@ -840,16 +843,17 @@
   #tab-food .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
   #tab-food .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
   #tab-food .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
-  #tab-food .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-food .field span { color: var(--ink-soft); margin: 0 1px; }
   #tab-food .field input[type="number"] {
-    width: 78px;
+    width: 4ch;
+    min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
-    padding: 4px 2px;
+    padding: 4px 0;
     -moz-appearance: textfield;
   }
   #tab-food .field input::-webkit-outer-spin-button,
@@ -926,16 +930,17 @@
   #tab-car .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
   #tab-car .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
   #tab-car .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
-  #tab-car .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-car .field span { color: var(--ink-soft); margin: 0 1px; }
   #tab-car .field input[type="number"] {
-    width: 78px;
+    width: 4ch;
+    min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
-    padding: 4px 2px;
+    padding: 4px 0;
     -moz-appearance: textfield;
   }
   #tab-car .field input::-webkit-outer-spin-button,
@@ -1011,16 +1016,17 @@
   #tab-utilities .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
   #tab-utilities .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
   #tab-utilities .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
-  #tab-utilities .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-utilities .field span { color: var(--ink-soft); margin: 0 1px; }
   #tab-utilities .field input[type="number"] {
-    width: 78px;
+    width: 4ch;
+    min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
-    padding: 4px 2px;
+    padding: 4px 0;
     -moz-appearance: textfield;
   }
   #tab-utilities .field input::-webkit-outer-spin-button,
@@ -1097,16 +1103,17 @@
   #tab-savings .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--income); }
   #tab-savings .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
   #tab-savings .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
-  #tab-savings .field span { color: var(--ink-soft); margin: 0 2px; }
+  #tab-savings .field span { color: var(--ink-soft); margin: 0 1px; }
   #tab-savings .field input[type="number"] {
-    width: 78px;
+    width: 4ch;
+    min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
-    padding: 4px 2px;
+    padding: 4px 0;
     -moz-appearance: textfield;
   }
   #tab-savings .field input::-webkit-outer-spin-button,
@@ -1415,6 +1422,24 @@
 </div>
 
 <script>
+  /* ================= currency input sizing (shared across tabs) ================= */
+  // Every "$"-prefixed (or "%"-suffixed) amount field is a <span> plus a fixed-width
+  // <input type="number">, which used to leave a big gap between the "$" and the
+  // right-aligned digits. Sizing each input to its own content keeps the "$"/"%" snug
+  // against the number while still right-aligning the whole thing like a ledger column.
+  function sizeCurrencyInput(input) {
+    const len = Math.max(String(input.value || '').length, String(input.placeholder || '').length, 1);
+    input.style.width = len + 'ch';
+  }
+  function sizeAllCurrencyInputs() {
+    document.querySelectorAll('.amount-wrap input[type="number"], .field input[type="number"]').forEach(sizeCurrencyInput);
+  }
+  document.addEventListener('input', function (e) {
+    if (e.target.matches && e.target.matches('.amount-wrap input[type="number"], .field input[type="number"]')) {
+      sizeCurrencyInput(e.target);
+    }
+  });
+
   /* ================= tab switching ================= */
   function switchTab(name) {
     document.getElementById('tab-budget').hidden = name !== 'budget';
@@ -1698,6 +1723,7 @@
       document.getElementById('income-sources-total').textContent = currency(total);
       document.getElementById('income-total-value').textContent = currency(total);
       BudgetApp.setLockedAmount('income', total);
+      sizeAllCurrencyInputs();
     }
 
     function getState() {
@@ -1957,6 +1983,7 @@
       root.appendChild(monthlyBlock);
 
       recalculateAll();
+      sizeAllCurrencyInputs();
     }
 
     function recalculateAll() {
@@ -2196,6 +2223,7 @@
       root.appendChild(totalBlock);
 
       recalculateAll();
+      sizeAllCurrencyInputs();
     }
 
     function recalculateAll() {
@@ -2415,6 +2443,7 @@
       root.appendChild(totalBlock);
 
       recalculateAll();
+      sizeAllCurrencyInputs();
     }
 
     function recalculateAll() {
@@ -2625,6 +2654,7 @@
       root.appendChild(totalBlock);
 
       recalculateAll();
+      sizeAllCurrencyInputs();
     }
 
     function recalculateAll() {
@@ -2857,6 +2887,7 @@
       root.appendChild(monthlyBlock);
 
       recalculateAll();
+      sizeAllCurrencyInputs();
     }
 
     function recalculateAll() {
@@ -2945,6 +2976,7 @@
       document.getElementById('subscriptions-section-total').textContent = currency(total);
       document.getElementById('subscriptions-total-value').textContent = currency(total);
       BudgetApp.setLockedAmount('subscriptions', total);
+      sizeAllCurrencyInputs();
     }
 
     function getState() {
@@ -3245,6 +3277,7 @@
     UtilitiesApp.setState(saved ? saved.utilities : null);
     SavingsApp.setState(saved ? saved.savings : null);
     SubscriptionsApp.setState(saved ? saved.subscriptions : null);
+    sizeAllCurrencyInputs();
   }
 
   function setAppearance(appearance) {
