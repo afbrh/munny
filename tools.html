@@ -590,7 +590,8 @@
   #tab-income .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
   /* ================= Subscriptions tab (scoped) ================= */
-  #tab-subscriptions .sheet { max-width: 640px; margin: 0 auto; }
+  #tab-subscriptions .page { max-width: 820px; margin: 0 auto; }
+  #tab-subscriptions .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
   #tab-subscriptions h1 {
     font-family: var(--font-header);
     font-weight: 600;
@@ -598,62 +599,93 @@
     margin: 0 0 28px;
     letter-spacing: var(--letter-spacing-header);
   }
-  #tab-subscriptions .section { margin-bottom: 28px; }
-  #tab-subscriptions .section-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    border-bottom: 2px solid var(--ink);
-    padding-bottom: 8px;
-    margin-bottom: 4px;
+  #tab-subscriptions .add-btn {
+    flex-shrink: 0;
+    align-self: center;
+    background: none;
+    border: 1px dashed var(--ink-soft);
+    color: var(--ink-soft);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
   }
-  #tab-subscriptions .section-head h2 { font-family: var(--font-header); font-size: 16px; font-weight: 600; margin: 0; color: var(--expense); }
-  #tab-subscriptions .section-total { font-family: var(--font-mono); font-size: 15px; font-weight: 500; }
-  #tab-subscriptions .row {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    row-gap: 6px;
-    gap: 10px;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--paper-line);
-  }
-  #tab-subscriptions .row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
-  #tab-subscriptions .row-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-  #tab-subscriptions .row input[type="text"] {
-    flex: 1;
+  #tab-subscriptions .add-btn:hover { border-color: var(--expense); color: var(--expense); }
+  #tab-subscriptions .table-scroll { overflow-x: auto; padding-bottom: 4px; }
+  #tab-subscriptions .flex-row { display: flex; align-items: center; min-width: max-content; }
+  #tab-subscriptions .row-label { width: 190px; flex: 0 0 190px; padding-right: 10px; display: flex; align-items: center; gap: 4px; }
+  #tab-subscriptions .row-label input.row-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
     border: none;
     background: transparent;
-    font-family: var(--font-body);
-    font-size: 15px;
-    color: var(--ink);
-    padding: 4px 2px;
+    padding: 2px 0;
   }
-  #tab-subscriptions .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-subscriptions .amount-wrap { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 15px; }
-  #tab-subscriptions .amount-wrap span { color: var(--ink-soft); margin-right: 1px; }
-  #tab-subscriptions .row input[type="number"] {
+  #tab-subscriptions .row-label input.row-name::placeholder { color: var(--ink-soft); }
+  #tab-subscriptions .row-label input.row-name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-subscriptions .row-label .row-remove-btn {
+    flex-shrink: 0;
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 16px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+  }
+  #tab-subscriptions .row-label .row-remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-subscriptions .row-values { display: flex; gap: 34px; }
+  #tab-subscriptions .value-cell { width: 118px; flex: 0 0 118px; }
+  #tab-subscriptions .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
+  #tab-subscriptions .col-head-cell { position: relative; text-align: right; }
+  #tab-subscriptions .col-head-cell input.name {
+    font-family: var(--font-header);
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    text-align: right;
+    width: 100%;
+    padding: 2px 0;
+  }
+  #tab-subscriptions .col-head-cell input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
+  #tab-subscriptions .col-head-cell .remove-btn {
+    display: block; margin: 3px 0 0 auto; background: none; border: none;
+    color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0;
+  }
+  #tab-subscriptions .col-head-cell .remove-btn:hover { color: var(--expense); }
+  #tab-subscriptions .col-head-cell .primary-toggle {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    margin-top: 6px; font-size: 11px; color: var(--ink-soft); cursor: pointer;
+  }
+  #tab-subscriptions .col-head-cell .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
+  #tab-subscriptions .col-head-cell .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
+  #tab-subscriptions .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
+  #tab-subscriptions .section { margin-bottom: 26px; }
+  #tab-subscriptions .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
+  #tab-subscriptions .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-subscriptions .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
+  #tab-subscriptions .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
+  #tab-subscriptions .field span { color: var(--ink-soft); margin: 0 1px; }
+  #tab-subscriptions .field input[type="number"] {
     width: 4ch;
     min-width: 0;
     text-align: right;
     border: none;
     background: transparent;
     font-family: var(--font-mono);
-    font-size: 15px;
+    font-size: 14px;
     color: var(--ink);
     padding: 4px 0;
     -moz-appearance: textfield;
   }
-  #tab-subscriptions .row input[type="number"]::-webkit-outer-spin-button,
-  #tab-subscriptions .row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  #tab-subscriptions .row input[type="number"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-subscriptions .remove-btn {
-    background: none; border: none; color: var(--ink-soft);
-    font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 4px;
-  }
-  #tab-subscriptions .remove-btn:hover { color: var(--danger); background: var(--expense-bg); }
+  #tab-subscriptions .field input::-webkit-outer-spin-button,
+  #tab-subscriptions .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #tab-subscriptions .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
   #tab-subscriptions .add-row-btn {
-    margin-top: 10px;
+    margin-top: 12px;
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
@@ -664,79 +696,13 @@
     cursor: pointer;
   }
   #tab-subscriptions .add-row-btn:hover { border-color: var(--expense); color: var(--expense); }
-  #tab-subscriptions .scenario-block { margin-bottom: 30px; }
-  #tab-subscriptions .scenario-block + .scenario-block { padding-top: 22px; border-top: 1px dashed var(--paper-line); }
-  #tab-subscriptions .scenario-header {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 14px;
-    border-bottom: 2px solid var(--ink);
-    padding-bottom: 8px;
-    margin-bottom: 4px;
-  }
-  #tab-subscriptions .scenario-header input.name {
-    font-family: var(--font-header);
-    font-weight: 600;
-    font-size: 16px;
-    border: none;
-    background: transparent;
-    color: var(--ink);
-    padding: 2px 0;
-    flex: 1 1 auto;
-    min-width: 80px;
-  }
-  #tab-subscriptions .scenario-header input.name:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-subscriptions .primary-toggle {
-    display: flex; align-items: center; gap: 5px;
-    font-size: 12px; color: var(--ink-soft); cursor: pointer; flex-shrink: 0; white-space: nowrap;
-  }
-  #tab-subscriptions .primary-toggle input { margin: 0; cursor: pointer; accent-color: var(--gold); }
-  #tab-subscriptions .primary-toggle.is-primary { color: var(--gold); font-weight: 600; }
-  #tab-subscriptions .scenario-header .remove-btn {
-    background: none; border: none; color: var(--ink-soft);
-    font-size: 12px; font-family: var(--font-body); cursor: pointer; padding: 0; flex-shrink: 0;
-  }
-  #tab-subscriptions .scenario-header .remove-btn:hover { color: var(--expense); background: none; }
-  #tab-subscriptions .add-btn {
-    display: block;
-    margin: 4px 0 0;
-    background: none;
-    border: 1px dashed var(--ink-soft);
-    color: var(--ink-soft);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  #tab-subscriptions .add-btn:hover { border-color: var(--expense); color: var(--expense); }
-  #tab-subscriptions .scenario-subtotal {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 8px;
-    padding-top: 8px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--ink-soft);
-  }
-  #tab-subscriptions .scenario-subtotal .value { color: var(--ink); font-weight: 600; }
-  #tab-subscriptions .summary { margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--ink); }
-  #tab-subscriptions .net-line {
-    display: flex;
-    flex-wrap: wrap;
-    row-gap: 4px;
-    column-gap: 10px;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 18px;
-    border-radius: 8px;
-    background: var(--gold-bg);
-  }
-  #tab-subscriptions .net-line .label { font-family: var(--font-header); font-weight: 600; font-size: 16px; color: var(--gold); }
-  #tab-subscriptions .net-line .value { font-family: var(--font-mono); font-weight: 500; font-size: 22px; color: var(--gold); }
-  #tab-subscriptions .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+  #tab-subscriptions .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
+  #tab-subscriptions .payment-block { margin-top: 4px; }
+  #tab-subscriptions .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-subscriptions .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
+  #tab-subscriptions .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-subscriptions .payment-row .value-text { font-size: 17px; color: var(--gold); }
+  #tab-subscriptions .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
   /* ================= Mortgage tab (scoped) ================= */
   #tab-mortgage .page { max-width: 820px; margin: 0 auto; }
@@ -1455,17 +1421,17 @@
   </div>
 
   <div id="tab-subscriptions" class="tab-panel" hidden>
-    <div class="sheet">
-      <h1>Subscriptions</h1>
-
-      <div id="subscriptions-root"></div>
-
-      <div class="summary">
-        <div class="net-line" id="subscriptions-net-line">
-          <span class="label">Total monthly subscriptions</span>
-          <span class="value" id="subscriptions-total-value">$0.00</span>
+    <div class="page">
+      <div class="header-bar">
+        <div>
+          <h1>Subscriptions</h1>
         </div>
       </div>
+
+      <div class="table-scroll">
+        <div id="subscriptions-table-root"></div>
+      </div>
+
       <p class="footnote">Checked scenarios' total monthly subscriptions syncs automatically into the Monthly Budget tab.</p>
     </div>
   </div>
@@ -2989,9 +2955,10 @@
 
   /* ================= Subscriptions app (namespaced) ================= */
   const SubscriptionsApp = (function () {
-    let scenarios = [{ id: 'sc1', name: 'Scenario A', items: [] }];
+    let rows = [];
+    let scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
     let nextLetter = 66; // 'B'
-    let nextItemId = 1;
+    let nextRowId = 1;
     let primaryIds = ['sc1'];
 
     function currency(n) {
@@ -3015,6 +2982,13 @@
       render();
     }
 
+    function updateValue(scenarioId, rowId, raw) {
+      const scenario = scenarios.find(s => s.id === scenarioId);
+      if (!scenario) return;
+      scenario.values[rowId] = raw;
+      recalculateAll();
+    }
+
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
@@ -3027,128 +3001,145 @@
       const id = 'sc' + Date.now();
       const name = 'Scenario ' + String.fromCharCode(nextLetter);
       nextLetter++;
-      scenarios.push({ id, name, items: [] });
+      const values = {};
+      rows.forEach(r => { values[r.id] = ''; });
+      scenarios.push({ id, name, values });
       render();
     }
 
-    function addItem(scenarioId, name, amount) {
-      const scenario = scenarios.find(s => s.id === scenarioId);
-      if (!scenario) return;
-      scenario.items.push({ id: 'i' + (nextItemId++), name: name || '', amount: amount !== undefined ? amount : '' });
+    function addSubscriptionRow(label) {
+      const id = 'r' + (nextRowId++);
+      rows.push({ id, label: label || '' });
+      scenarios.forEach(s => { s.values[id] = ''; });
       render();
     }
 
-    function removeItem(scenarioId, itemId) {
-      const scenario = scenarios.find(s => s.id === scenarioId);
-      if (!scenario) return;
-      scenario.items = scenario.items.filter(i => i.id !== itemId);
+    function removeSubscriptionRow(rowId) {
+      rows = rows.filter(r => r.id !== rowId);
+      scenarios.forEach(s => { delete s.values[rowId]; });
       render();
     }
 
-    function buildItemRow(scenario, item) {
-      const row = el('div', 'row');
-      const main = el('div', 'row-main');
-      const nameInput = document.createElement('input');
-      nameInput.type = 'text';
-      nameInput.placeholder = 'Subscription name';
-      nameInput.value = item.name || '';
-      nameInput.addEventListener('input', e => { item.name = e.target.value; });
-      main.appendChild(nameInput);
-      row.appendChild(main);
+    function buildHeaderRow() {
+      const row = el('div', 'flex-row col-head-row');
+      row.appendChild(el('div', 'row-label'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const isPrimary = primaryIds.includes(scenario.id);
+        const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
+        const input = document.createElement('input');
+        input.className = 'name';
+        input.value = scenario.name;
+        input.addEventListener('input', e => { scenario.name = e.target.value; });
+        cell.appendChild(input);
 
-      const actions = el('div', 'row-actions');
-      const amountWrap = el('div', 'amount-wrap');
-      const dollar = document.createElement('span');
-      dollar.textContent = '$';
-      amountWrap.appendChild(dollar);
-      const amountInput = document.createElement('input');
-      amountInput.type = 'number';
-      amountInput.placeholder = '0.00';
-      amountInput.step = '0.01';
-      amountInput.min = '0';
-      amountInput.value = item.amount !== undefined ? item.amount : '';
-      amountInput.addEventListener('input', e => { item.amount = e.target.value; recalculateAll(); });
-      amountWrap.appendChild(amountInput);
-      actions.appendChild(amountWrap);
+        const toggle = document.createElement('label');
+        toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
+        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Subscriptions" amount';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isPrimary;
+        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
+        const toggleText = document.createElement('span');
+        toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
+        toggle.appendChild(checkbox);
+        toggle.appendChild(toggleText);
+        cell.appendChild(toggle);
 
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'remove-btn';
-      removeBtn.innerHTML = '&times;';
-      removeBtn.setAttribute('aria-label', 'Remove row');
-      removeBtn.onclick = () => removeItem(scenario.id, item.id);
-      actions.appendChild(removeBtn);
-
-      row.appendChild(actions);
-      return row;
-    }
-
-    function buildScenarioBlock(scenario) {
-      const isPrimary = primaryIds.includes(scenario.id);
-      const block = el('div', 'scenario-block');
-
-      const header = el('div', 'scenario-header');
-      const nameInput = document.createElement('input');
-      nameInput.className = 'name';
-      nameInput.value = scenario.name;
-      nameInput.addEventListener('input', e => { scenario.name = e.target.value; });
-      header.appendChild(nameInput);
-
-      const toggle = document.createElement('label');
-      toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-      toggle.title = 'Include this scenario\'s total in the Monthly Budget "Subscriptions" amount';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = isPrimary;
-      checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
-      const toggleText = document.createElement('span');
-      toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
-      toggle.appendChild(checkbox);
-      toggle.appendChild(toggleText);
-      header.appendChild(toggle);
-
-      if (scenarios.length > 1) {
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
-        removeBtn.textContent = 'Remove';
-        removeBtn.onclick = () => removeScenario(scenario.id);
-        header.appendChild(removeBtn);
-      }
-      block.appendChild(header);
-
-      const rowsContainer = el('div', 'subscription-rows');
-      scenario.items.forEach(item => rowsContainer.appendChild(buildItemRow(scenario, item)));
-      block.appendChild(rowsContainer);
-
-      const addRowBtn = document.createElement('button');
-      addRowBtn.className = 'add-row-btn';
-      addRowBtn.textContent = '+ Add subscription';
-      addRowBtn.onclick = () => addItem(scenario.id);
-      block.appendChild(addRowBtn);
-
-      const subtotal = el('div', 'scenario-subtotal');
-      const subtotalLabel = document.createElement('span');
-      subtotalLabel.textContent = 'Subtotal';
-      const subtotalValue = document.createElement('span');
-      subtotalValue.className = 'value';
-      subtotalValue.id = 'sub-subtotal-' + scenario.id;
-      subtotalValue.textContent = '$0.00';
-      subtotal.appendChild(subtotalLabel);
-      subtotal.appendChild(subtotalValue);
-      block.appendChild(subtotal);
-
-      return block;
-    }
-
-    function render() {
-      const root = document.getElementById('subscriptions-root');
-      root.innerHTML = '';
-      scenarios.forEach(scenario => root.appendChild(buildScenarioBlock(scenario)));
-
+        if (scenarios.length > 1) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = () => removeScenario(scenario.id);
+          cell.appendChild(removeBtn);
+        }
+        values.appendChild(cell);
+      });
       const addBtn = document.createElement('button');
       addBtn.className = 'add-btn';
       addBtn.textContent = '+ Add scenario';
       addBtn.onclick = () => addScenario();
-      root.appendChild(addBtn);
+      values.appendChild(addBtn);
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildInputRow(rowData) {
+      const row = el('div', 'row flex-row');
+      const label = el('div', 'row-label');
+      const labelInput = document.createElement('input');
+      labelInput.className = 'row-name';
+      labelInput.type = 'text';
+      labelInput.placeholder = 'Subscription name';
+      labelInput.value = rowData.label || '';
+      labelInput.addEventListener('input', e => { rowData.label = e.target.value; });
+      label.appendChild(labelInput);
+
+      const removeRowBtn = document.createElement('button');
+      removeRowBtn.className = 'row-remove-btn';
+      removeRowBtn.innerHTML = '&times;';
+      removeRowBtn.setAttribute('aria-label', 'Remove subscription');
+      removeRowBtn.onclick = () => removeSubscriptionRow(rowData.id);
+      label.appendChild(removeRowBtn);
+      row.appendChild(label);
+
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const wrap = el('div', 'field');
+        const dollar = document.createElement('span');
+        dollar.textContent = '$';
+        wrap.appendChild(dollar);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = '0.01';
+        input.value = scenario.values[rowData.id] !== undefined ? scenario.values[rowData.id] : '';
+        input.addEventListener('input', e => updateValue(scenario.id, rowData.id, e.target.value));
+        wrap.appendChild(input);
+        cell.appendChild(wrap);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function buildTotalRow() {
+      const row = el('div', 'flex-row payment-row');
+      row.appendChild(el('div', 'row-label', '<span class="field-label">Total monthly subscriptions</span>'));
+      const values = el('div', 'row-values');
+      scenarios.forEach(scenario => {
+        const cell = el('div', 'value-cell');
+        const span = document.createElement('span');
+        span.className = 'value-text';
+        span.id = 'sub-total-' + scenario.id;
+        span.textContent = '$0';
+        cell.appendChild(span);
+        values.appendChild(cell);
+      });
+      row.appendChild(values);
+      return row;
+    }
+
+    function render() {
+      const root = document.getElementById('subscriptions-table-root');
+      root.innerHTML = '';
+      root.appendChild(buildHeaderRow());
+
+      const section = el('div', 'section');
+      section.appendChild(el('div', 'section-head', '<h2>Subscriptions</h2>'));
+      rows.forEach(r => section.appendChild(buildInputRow(r)));
+      root.appendChild(section);
+
+      const addRowBtn = document.createElement('button');
+      addRowBtn.className = 'add-row-btn';
+      addRowBtn.textContent = '+ Add subscription';
+      addRowBtn.onclick = () => addSubscriptionRow();
+      root.appendChild(addRowBtn);
+
+      const totalBlock = el('div', 'summary-block payment-block');
+      totalBlock.appendChild(buildTotalRow());
+      root.appendChild(totalBlock);
 
       recalculateAll();
       sizeAllCurrencyInputs();
@@ -3158,48 +3149,67 @@
       let budgetTotal = 0;
       scenarios.forEach(scenario => {
         let total = 0;
-        scenario.items.forEach(item => { total += parseFloat(item.amount) || 0; });
-        const subtotalEl = document.getElementById('sub-subtotal-' + scenario.id);
-        if (subtotalEl) subtotalEl.textContent = currency(total);
+        rows.forEach(r => { total += parseFloat(scenario.values[r.id]) || 0; });
+        const totalEl = document.getElementById('sub-total-' + scenario.id);
+        if (totalEl) totalEl.textContent = currency(total);
         if (primaryIds.includes(scenario.id)) budgetTotal += total;
       });
-      document.getElementById('subscriptions-total-value').textContent = currency(budgetTotal);
       BudgetApp.setLockedAmount('subscriptions', budgetTotal);
-      sizeAllCurrencyInputs();
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, nextItemId, primaryIds: primaryIds.slice() };
+      return {
+        rows: rows.map(r => ({ id: r.id, label: r.label })),
+        scenarios: scenarios.map(s => ({ id: s.id, name: s.name, values: Object.assign({}, s.values) })),
+        nextLetter,
+        nextRowId,
+        primaryIds: primaryIds.slice()
+      };
     }
 
     function setState(state) {
-      if (state && Array.isArray(state.scenarios) && state.scenarios.length) {
-        scenarios = state.scenarios.map(s => ({
-          id: s.id,
-          name: s.name,
-          items: Array.isArray(s.items) ? s.items.map(i => ({ id: i.id || ('i' + (nextItemId++)), name: i.name, amount: i.amount })) : []
-        }));
+      if (state && Array.isArray(state.rows) && Array.isArray(state.scenarios)) {
+        // Current grid format: shared rows (subscriptions) x scenario columns.
+        rows = state.rows.map(r => ({ id: r.id, label: r.label }));
+        scenarios = state.scenarios.map(s => ({ id: s.id, name: s.name, values: Object.assign({}, s.values) }));
         nextLetter = state.nextLetter || nextLetter;
-        nextItemId = state.nextItemId || nextItemId;
+        nextRowId = state.nextRowId || nextRowId;
         primaryIds = Array.isArray(state.primaryIds) ? state.primaryIds.filter(id => scenarios.some(s => s.id === id)) : [];
-        if (!primaryIds.length) primaryIds = [scenarios[0].id];
+        if (!primaryIds.length && scenarios.length) primaryIds = [scenarios[0].id];
+      } else if (state && Array.isArray(state.scenarios) && state.scenarios.length && Array.isArray(state.scenarios[0].items)) {
+        // Migrate from the short-lived per-scenario-list format (each scenario had its own named items) —
+        // matches items across scenarios by name into shared rows, so nothing typed gets lost.
+        const rowByLabel = new Map();
+        rows = [];
+        scenarios = state.scenarios.map(s => ({ id: s.id, name: s.name, values: {} }));
+        state.scenarios.forEach((s, sIdx) => {
+          (s.items || []).forEach(item => {
+            const key = (item.name || '').trim().toLowerCase();
+            let rowId = key && rowByLabel.get(key);
+            if (!rowId) {
+              rowId = 'r' + (nextRowId++);
+              rows.push({ id: rowId, label: item.name || '' });
+              if (key) rowByLabel.set(key, rowId);
+            }
+            scenarios[sIdx].values[rowId] = item.amount;
+          });
+        });
+        nextLetter = state.nextLetter || nextLetter;
+        primaryIds = Array.isArray(state.primaryIds) ? state.primaryIds.filter(id => scenarios.some(s => s.id === id)) : [];
+        if (!primaryIds.length && scenarios.length) primaryIds = [scenarios[0].id];
       } else if (state && Array.isArray(state.items)) {
         // Legacy pre-scenarios save format: a single flat subscription list.
-        scenarios = [{
-          id: 'sc1',
-          name: 'Scenario A',
-          items: state.items.map(i => ({ id: 'i' + (nextItemId++), name: i.name, amount: i.amount }))
-        }];
+        rows = state.items.map(i => ({ id: 'r' + (nextRowId++), label: i.name }));
+        scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
+        rows.forEach((r, idx) => { scenarios[0].values[r.id] = state.items[idx].amount; });
         primaryIds = ['sc1'];
       } else {
-        scenarios = [{
-          id: 'sc1',
-          name: 'Scenario A',
-          items: [
-            { id: 'i' + (nextItemId++), name: 'Netflix', amount: '' },
-            { id: 'i' + (nextItemId++), name: 'Spotify', amount: '' }
-          ]
-        }];
+        rows = [
+          { id: 'r' + (nextRowId++), label: 'Netflix' },
+          { id: 'r' + (nextRowId++), label: 'Spotify' }
+        ];
+        scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
+        rows.forEach(r => { scenarios[0].values[r.id] = ''; });
         primaryIds = ['sc1'];
       }
       render();
