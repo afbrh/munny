@@ -136,7 +136,7 @@
     padding-bottom: 11px;
     cursor: default;
   }
-  .save-bar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
+  .save-bar { display: flex; align-items: flex-start; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
   .appearance-group {
     display: flex;
     align-items: center;
@@ -164,13 +164,17 @@
   }
   .appearance-option:has(input:checked) { color: var(--ink); }
   .save-btn {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: var(--ink);
     color: var(--paper);
     border: none;
     font-family: var(--font-body);
     font-size: 14px;
     font-weight: 600;
-    padding: 10px 20px;
+    padding: 0 20px;
     border-radius: 6px;
     cursor: pointer;
   }
