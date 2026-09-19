@@ -202,7 +202,6 @@
     margin: -6px 0 22px;
     min-height: 16px;
   }
-  #print-report { display: none; }
   .app-footnote {
     max-width: 820px;
     margin: 30px auto 0;
@@ -974,42 +973,6 @@
   #tab-savings .payment-row .value-text { font-size: 17px; color: var(--gold); }
   #tab-savings .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
-  /* ================= Print report ================= */
-  #print-report h1 { font-family: var(--font-header); font-weight: 600; font-size: 24px; margin: 0 0 2px; }
-  #print-report .report-date { color: var(--ink-soft); font-size: 13px; margin: 0 0 28px; }
-  #print-report h2 {
-    font-family: var(--font-header); font-weight: 600; font-size: 17px;
-    margin: 26px 0 10px; border-bottom: 2px solid var(--ink); padding-bottom: 6px;
-  }
-  #print-report h2:first-of-type { margin-top: 0; }
-  #print-report .report-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 13px; }
-  #print-report .report-table th, #print-report .report-table td { padding: 6px 4px; border-bottom: 1px solid var(--paper-line); text-align: left; }
-  #print-report .report-table th:last-child, #print-report .report-table td:last-child { text-align: right; font-family: var(--font-mono); }
-  #print-report .report-table thead th { font-family: var(--font-header); font-weight: 600; border-bottom: 2px solid var(--ink); }
-  #print-report .report-table .report-subhead td { font-weight: 600; padding-top: 16px; border-bottom: 2px solid var(--ink); }
-  #print-report .report-table .report-total td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
-  #print-report .report-net {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 14px; border: 2px solid var(--gold); border-radius: 6px;
-    font-family: var(--font-header); font-weight: 600; color: var(--gold); margin-bottom: 8px;
-  }
-  #print-report .report-net .value { font-family: var(--font-mono); font-size: 18px; }
-  #print-report .report-net.negative { border-color: var(--expense); color: var(--expense); }
-
-  @media print {
-    body * { visibility: hidden; }
-    #print-report, #print-report * { visibility: visible; }
-    #print-report {
-      display: block;
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      padding: 0;
-      margin: 0;
-    }
-    @page { margin: 0.6in; }
-  }
-
   /* ================= Theme skins (decorative touches) ================= */
   [data-skin="elder"] h1::before { content: "\1FAB6  "; }
   [data-skin="elder"] .primary-toggle input[type="checkbox"] {
@@ -1082,7 +1045,6 @@
       <label class="appearance-option"><input type="radio" name="appearance" value="machina" onchange="setAppearance('machina')">Machina</label>
     </div>
     <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
-    <button class="save-btn export-btn" id="export-pdf-btn" onclick="exportPdf()" hidden="">Export PDF</button>
     <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
     <span class="save-status" id="save-status"></span>
   </div>
@@ -1100,8 +1062,6 @@
     </div>
   </div>
 
-
-  <div id="print-report"></div>
 
   <div id="tab-budget" class="tab-panel" hidden="">
     <div class="sheet">
@@ -1571,27 +1531,7 @@
       recalculate();
     }
 
-    function getSummary() {
-      const rows = document.querySelectorAll('#income-source-rows .row');
-      let total = 0;
-      const items = [];
-      rows.forEach(row => {
-        const r = readRow(row);
-        const monthly = monthlyEquivalent(r.amount, r.frequency);
-        total += monthly;
-        const freqLabel = frequencyInfo(r.frequency).label;
-        items.push({
-          label: (r.name || 'Income source') + ' (' + freqLabel + ')',
-          value: currency(parseFloat(r.amount) || 0) + ' → ' + currency(monthly) + '/mo'
-        });
-      });
-      return {
-        title: 'Income',
-        scenarios: [{ name: 'All sources', isPrimary: false, rows: items, totalLabel: 'Total monthly income', total: currency(total) }]
-      };
-    }
-
-    return { addSource, getState, setState, recalculate, getSummary };
+    return { addSource, getState, setState, recalculate };
   })();
 
   /* ================= Mortgage app (namespaced) ================= */
@@ -1906,50 +1846,7 @@
       render();
     }
 
-    function getSummary() {
-      return {
-        title: 'Housing',
-        scenarios: scenarios.map(scenario => {
-          const v = scenario.values;
-          const loanAmount = parseFloat(v.loanAmount) || 0;
-          const annualRate = parseFloat(v.rate) || 0;
-          const years = parseInt(v.term, 10) || 30;
-          const n = years * 12;
-          const monthlyRate = annualRate / 100 / 12;
-          let monthlyPayment;
-          if (monthlyRate === 0) {
-            monthlyPayment = n > 0 ? loanAmount / n : 0;
-          } else {
-            const factor = Math.pow(1 + monthlyRate, n);
-            monthlyPayment = loanAmount * (monthlyRate * factor) / (factor - 1);
-          }
-          if (!isFinite(monthlyPayment)) monthlyPayment = 0;
-          const taxMonthly = (parseFloat(v.tax) || 0) / 12;
-          const insuranceMonthly = (parseFloat(v.insurance) || 0) / 12;
-          const rentMonthly = parseFloat(v.rent) || 0;
-          const rentersInsuranceMonthly = (parseFloat(v.rentersInsurance) || 0) / 12;
-          const totalMonthly = monthlyPayment + taxMonthly + insuranceMonthly + rentMonthly + rentersInsuranceMonthly;
-          return {
-            name: scenario.name,
-            isPrimary: primaryIds.includes(scenario.id),
-            rows: [
-              { label: 'Loan amount', value: currency(loanAmount) },
-              { label: 'Interest rate', value: annualRate + '%' },
-              { label: 'Loan term', value: years + ' years' },
-              { label: 'Property tax (monthly)', value: currency(taxMonthly, 2) },
-              { label: 'Home insurance (monthly)', value: currency(insuranceMonthly, 2) },
-              { label: 'Principal & interest (monthly)', value: currency(monthlyPayment, 2) },
-              { label: 'Rent (monthly)', value: currency(rentMonthly, 2) },
-              { label: 'Renters insurance (monthly)', value: currency(rentersInsuranceMonthly, 2) }
-            ],
-            totalLabel: 'Monthly payment',
-            total: currency(totalMonthly, 2)
-          };
-        })
-      };
-    }
-
-    return { addScenario, getState, setState, togglePrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary };
   })();
 
   /* ================= Food app (namespaced) ================= */
@@ -2162,22 +2059,7 @@
       render();
     }
 
-    function getSummary() {
-      return {
-        title: 'Food',
-        scenarios: scenarios.map(scenario => {
-          let total = 0;
-          const rows = FOOD_FIELDS.map(f => {
-            const val = parseFloat(scenario.values[f.key]) || 0;
-            total += val;
-            return { label: f.label, value: currency(val) };
-          });
-          return { name: scenario.name, isPrimary: primaryIds.includes(scenario.id), rows, totalLabel: 'Total food expense', total: currency(total) };
-        })
-      };
-    }
-
-    return { addScenario, getState, setState, togglePrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary };
   })();
 
   /* ================= Car app (namespaced) ================= */
@@ -2390,22 +2272,7 @@
       render();
     }
 
-    function getSummary() {
-      return {
-        title: 'Car',
-        scenarios: scenarios.map(scenario => {
-          let total = 0;
-          const rows = CAR_FIELDS.map(f => {
-            const val = parseFloat(scenario.values[f.key]) || 0;
-            total += f.annual ? val / 12 : val;
-            return { label: f.label + (f.annual ? ' (per year)' : ''), value: currency(val) };
-          });
-          return { name: scenario.name, isPrimary: primaryIds.includes(scenario.id), rows, totalLabel: 'Total car expense (monthly)', total: currency(total) };
-        })
-      };
-    }
-
-    return { addScenario, getState, setState, togglePrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary };
   })();
 
   /* ================= Utilities app (namespaced) ================= */
@@ -2612,22 +2479,7 @@
       render();
     }
 
-    function getSummary() {
-      return {
-        title: 'Utilities',
-        scenarios: scenarios.map(scenario => {
-          let total = 0;
-          const rows = UTILITIES_FIELDS.map(f => {
-            const val = parseFloat(scenario.values[f.key]) || 0;
-            total += val;
-            return { label: f.label, value: currency(val) };
-          });
-          return { name: scenario.name, isPrimary: primaryIds.includes(scenario.id), rows, totalLabel: 'Total utilities expense', total: currency(total) };
-        })
-      };
-    }
-
-    return { addScenario, getState, setState, togglePrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary };
   })();
 
   /* ================= Savings app (namespaced) ================= */
@@ -2862,23 +2714,7 @@
       render();
     }
 
-    function getSummary() {
-      return {
-        title: 'Savings',
-        scenarios: scenarios.map(scenario => {
-          let yearlyTotal = 0;
-          const rows = SAVINGS_FIELDS.map(f => {
-            const val = parseFloat(scenario.values[f.key]) || 0;
-            yearlyTotal += val;
-            return { label: f.label + ' (per year)', value: currency(val) };
-          });
-          rows.push({ label: 'Total yearly goal', value: currency(yearlyTotal) });
-          return { name: scenario.name, isPrimary: primaryIds.includes(scenario.id), rows, totalLabel: 'Monthly contribution', total: currency(yearlyTotal / 12) };
-        })
-      };
-    }
-
-    return { addScenario, getState, setState, togglePrimary, getSummary };
+    return { addScenario, getState, setState, togglePrimary };
   })();
 
   /* ================= Subscriptions app (namespaced) ================= */
@@ -2947,23 +2783,7 @@
       recalculate();
     }
 
-    function getSummary() {
-      const rows = document.querySelectorAll('#subscription-rows .row');
-      let total = 0;
-      const items = [];
-      rows.forEach(row => {
-        const name = row.querySelector('input[type="text"]').value || 'Subscription';
-        const amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
-        total += amount;
-        items.push({ label: name, value: currency(amount) });
-      });
-      return {
-        title: 'Subscriptions',
-        scenarios: [{ name: 'All subscriptions', isPrimary: false, rows: items, totalLabel: 'Total monthly subscriptions', total: currency(total) }]
-      };
-    }
-
-    return { addSubscription, removeRow, getState, setState, recalculate, getSummary };
+    return { addSubscription, removeRow, getState, setState, recalculate };
   })();
 
   /* ================= GitHub sync (namespaced) ================= */
@@ -3135,10 +2955,8 @@
   function setGoogleSignedInUi(signedIn) {
     const signinBtn = document.getElementById('google-signin-btn');
     const saveBtn = document.getElementById('save-btn');
-    const exportBtn = document.getElementById('export-pdf-btn');
     if (signinBtn) signinBtn.hidden = signedIn;
     if (saveBtn) saveBtn.hidden = !signedIn;
-    if (exportBtn) exportBtn.hidden = !signedIn;
   }
 
   async function handleGoogleSignIn() {
@@ -3196,70 +3014,6 @@
     }
   }
 
-  /* ================= PDF export (print-to-PDF) ================= */
-  function escapeHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str == null ? '' : String(str);
-    return d.innerHTML;
-  }
-
-  function reportCurrency(n) {
-    const num = parseFloat(n) || 0;
-    return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function buildBudgetSectionHtml() {
-    const budget = BudgetApp.getState();
-    const sum = rows => rows.reduce((t, r) => t + (parseFloat(r.amount) || 0), 0);
-    const incomeTotal = sum(budget.income);
-    const expenseTotal = sum(budget.expense);
-    const net = incomeTotal - expenseTotal;
-
-    let html = '<h2>Monthly Budget</h2><table class="report-table"><tbody>';
-    html += '<tr class="report-subhead"><td colspan="2">Income</td></tr>';
-    budget.income.forEach(r => {
-      html += '<tr><td>' + escapeHtml(r.label) + '</td><td>' + reportCurrency(r.amount) + '</td></tr>';
-    });
-    html += '<tr class="report-total"><td>Total income</td><td>' + reportCurrency(incomeTotal) + '</td></tr>';
-    html += '<tr class="report-subhead"><td colspan="2">Expenses</td></tr>';
-    budget.expense.forEach(r => {
-      html += '<tr><td>' + escapeHtml(r.label) + (r.locked ? ' 🔒' : '') + '</td><td>' + reportCurrency(r.amount) + '</td></tr>';
-    });
-    html += '<tr class="report-total"><td>Total expenses</td><td>' + reportCurrency(expenseTotal) + '</td></tr>';
-    html += '</tbody></table>';
-    html += '<div class="report-net' + (net < 0 ? ' negative' : '') + '">' +
-      '<span>Net for the month</span><span class="value">' + (net < 0 ? '-' : '') + reportCurrency(Math.abs(net)) + '</span></div>';
-    return html;
-  }
-
-  function buildScenarioSectionHtml(summary) {
-    let html = '<h2>' + escapeHtml(summary.title) + '</h2>';
-    summary.scenarios.forEach(sc => {
-      html += '<table class="report-table"><thead><tr><th colspan="2">' +
-        escapeHtml(sc.name) + (sc.isPrimary ? ' ★ (used in budget)' : '') + '</th></tr></thead><tbody>';
-      sc.rows.forEach(row => {
-        html += '<tr><td>' + escapeHtml(row.label) + '</td><td>' + escapeHtml(row.value) + '</td></tr>';
-      });
-      html += '<tr class="report-total"><td>' + escapeHtml(sc.totalLabel || 'Total') + '</td><td>' + escapeHtml(sc.total) + '</td></tr>';
-      html += '</tbody></table>';
-    });
-    return html;
-  }
-
-  function buildPrintReportHtml() {
-    let html = '<h1>Munny — Monthly Budget Report</h1>';
-    html += '<p class="report-date">Generated ' + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + '</p>';
-    html += buildBudgetSectionHtml();
-    [IncomeApp, MortgageApp, FoodApp, CarApp, UtilitiesApp, SavingsApp, SubscriptionsApp].forEach(app => {
-      html += buildScenarioSectionHtml(app.getSummary());
-    });
-    return html;
-  }
-
-  function exportPdf() {
-    document.getElementById('print-report').innerHTML = buildPrintReportHtml();
-    window.print();
-  }
 
   function applyLoadedData(saved) {
     // Migrate the old flat Income list (from the Monthly Budget tab) into the new Income tab,
