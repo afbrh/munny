@@ -917,8 +917,8 @@
       <button class="tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')">Subscriptions</button>
     </div>
     <div class="save-bar">
-      <button class="save-btn" onclick="saveApp()">Save</button>
-      <button class="save-btn export-btn" onclick="exportPdf()">Export PDF</button>
+      <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
+      <button class="save-btn export-btn" id="export-pdf-btn" onclick="exportPdf()" hidden="">Export PDF</button>
       <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
       <span class="save-status" id="save-status"></span>
     </div>
@@ -2855,8 +2855,12 @@
   }
 
   function setGoogleSignedInUi(signedIn) {
-    const btn = document.getElementById('google-signin-btn');
-    if (btn) btn.hidden = signedIn;
+    const signinBtn = document.getElementById('google-signin-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const exportBtn = document.getElementById('export-pdf-btn');
+    if (signinBtn) signinBtn.hidden = signedIn;
+    if (saveBtn) saveBtn.hidden = !signedIn;
+    if (exportBtn) exportBtn.hidden = !signedIn;
   }
 
   async function handleGoogleSignIn() {
