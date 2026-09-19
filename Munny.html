@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head>
+<script>(function(){try{var t=localStorage.getItem('munny_theme');if(t!=='light'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Munny</title>
@@ -20,6 +21,19 @@
     --gold: #9C7A2E;
     --gold-bg: #F1E9D2;
     --danger: #A32D2D;
+  }
+  :root[data-theme="dark"] {
+    --paper: #000000;
+    --paper-line: #1C1C1C;
+    --ink: #F0F0EA;
+    --ink-soft: #8C8C84;
+    --income: #6FCF7A;
+    --income-bg: #101F13;
+    --expense: #E2685A;
+    --expense-bg: #241211;
+    --gold: #D9B25E;
+    --gold-bg: #1F1A0E;
+    --danger: #EF5350;
   }
   * { box-sizing: border-box; }
   body {
@@ -912,6 +926,7 @@
 
 <div class="app-shell">
   <div class="save-bar">
+    <button class="save-btn export-btn" id="theme-toggle-btn" onclick="toggleTheme()">Light mode</button>
     <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
     <button class="save-btn export-btn" id="export-pdf-btn" onclick="exportPdf()" hidden="">Export PDF</button>
     <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
@@ -3096,12 +3111,31 @@
     SubscriptionsApp.setState(saved ? saved.subscriptions : null);
   }
 
+  function syncThemeToggleLabel() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) btn.textContent = isDark ? 'Light mode' : 'Dark mode';
+  }
+
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      try { localStorage.setItem('munny_theme', 'light'); } catch (e) {}
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      try { localStorage.setItem('munny_theme', 'dark'); } catch (e) {}
+    }
+    syncThemeToggleLabel();
+  }
+
   function loadApp() {
     // Google's sign-in popup needs a real click, so it can't happen automatically on
     // page load — fields start at their zeroed default; click "Sign in with Google"
     // (or Save) to load/push the real thing via Drive.
     applyLoadedData(null);
     setGoogleSignedInUi(false);
+    syncThemeToggleLabel();
   }
 
   loadApp();
