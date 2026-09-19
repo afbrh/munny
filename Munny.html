@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script>(function(){try{var t=localStorage.getItem('munny_theme');if(t!=='light'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('munny_theme');if(t!=='light'){document.documentElement.setAttribute('data-theme','dark');}var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){document.documentElement.setAttribute('data-skin',s);}}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Munny</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;family=MedievalSharp&amp;family=IM+Fell+English&amp;family=Orbitron:wght@500;700&amp;display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
 <style>
   :root {
@@ -21,6 +21,11 @@
     --gold: #9C7A2E;
     --gold-bg: #F1E9D2;
     --danger: #A32D2D;
+    --font-header: 'Lora', serif;
+    --font-body: 'Source Sans Pro', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --bg-texture: none;
+    --letter-spacing-header: -0.01em;
   }
   :root[data-theme="dark"] {
     --paper: #000000;
@@ -35,12 +40,53 @@
     --gold-bg: #1F1A0E;
     --danger: #EF5350;
   }
+  :root[data-skin="elder"] {
+    --paper: #E9DDB0;
+    --paper-line: #D2C08D;
+    --ink: #3B2A18;
+    --ink-soft: #7C6640;
+    --income: #3F5A2A;
+    --income-bg: #DAD6AC;
+    --expense: #7C3624;
+    --expense-bg: #E1CBA4;
+    --gold: #8B5A1E;
+    --gold-bg: #DDC58C;
+    --danger: #7C3624;
+    --font-header: 'MedievalSharp', cursive;
+    --font-body: 'IM Fell English', serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --letter-spacing-header: 0.01em;
+    --bg-texture:
+      radial-gradient(ellipse at 20% 15%, rgba(139,90,30,0.10), transparent 60%),
+      radial-gradient(ellipse at 85% 80%, rgba(124,54,36,0.10), transparent 55%),
+      repeating-radial-gradient(circle at 50% 50%, rgba(59,42,24,0.03) 0, rgba(59,42,24,0.03) 1px, transparent 2px, transparent 4px);
+  }
+  :root[data-skin="machina"] {
+    --paper: #050807;
+    --paper-line: #10221C;
+    --ink: #52FFC6;
+    --ink-soft: #3C8A78;
+    --income: #52FFC6;
+    --income-bg: #06160F;
+    --expense: #FF4470;
+    --expense-bg: #180208;
+    --gold: #FFC857;
+    --gold-bg: #17130a;
+    --danger: #FF4470;
+    --font-header: 'Orbitron', sans-serif;
+    --font-body: 'IBM Plex Mono', monospace;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --letter-spacing-header: 0.04em;
+    --bg-texture: repeating-linear-gradient(0deg, rgba(82,255,198,0.025) 0px, rgba(82,255,198,0.025) 1px, transparent 1px, transparent 3px);
+  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: var(--paper);
+    background: var(--bg-texture), var(--paper);
+    background-attachment: fixed;
     color: var(--ink);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
+    transition: background-color .15s ease, color .15s ease;
     padding: 40px 20px 80px;
     overflow-x: hidden;
   }
@@ -63,7 +109,7 @@
     row-gap: 8px;
   }
   .tab-btn {
-    font-family: 'Lora', serif;
+    font-family: var(--font-body);
     font-weight: 600;
     font-size: 14px;
     background: var(--paper-line);
@@ -107,11 +153,26 @@
     cursor: pointer;
   }
   .theme-toggle-btn:hover { background: var(--paper-line); }
+  .theme-toggle-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .theme-toggle-btn:disabled:hover { background: none; }
+  .skin-select {
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 17px;
+    background: none;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .skin-select:hover { background: var(--paper-line); }
   .save-btn {
     background: var(--ink);
     color: var(--paper);
     border: none;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 14px;
     font-weight: 600;
     padding: 10px 20px;
@@ -145,11 +206,11 @@
   /* ================= Budget tab (scoped) ================= */
   #tab-budget .sheet { max-width: 640px; margin: 0 auto; }
   #tab-budget h1 {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 28px;
     margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--letter-spacing-header);
   }
   #tab-budget .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0 0 32px; }
   #tab-budget .section { margin-bottom: 28px; }
@@ -161,10 +222,10 @@
     padding-bottom: 8px;
     margin-bottom: 4px;
   }
-  #tab-budget .section-head h2 { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; margin: 0; }
+  #tab-budget .section-head h2 { font-family: var(--font-header); font-size: 16px; font-weight: 600; margin: 0; }
   #tab-budget .section.income .section-head h2 { color: var(--income); }
   #tab-budget .section.expense .section-head h2 { color: var(--expense); }
-  #tab-budget .section-total { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500; }
+  #tab-budget .section-total { font-family: var(--font-mono); font-size: 15px; font-weight: 500; }
   #tab-budget .row {
     display: flex;
     align-items: center;
@@ -180,7 +241,7 @@
     flex: 1;
     border: none;
     background: transparent;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 15px;
     color: var(--ink);
     padding: 4px 2px;
@@ -193,16 +254,16 @@
   #tab-budget .row.locked .lock-hint {
     font-size: 11px; color: var(--gold); background: none; border: none;
     text-decoration: underline; cursor: pointer; padding: 0; margin-right: 4px; flex-shrink: 0;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
   }
-  #tab-budget .amount-wrap { display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 15px; }
+  #tab-budget .amount-wrap { display: flex; align-items: center; font-family: var(--font-mono); font-size: 15px; }
   #tab-budget .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
   #tab-budget .row input[type="number"] {
     width: 90px;
     text-align: right;
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 15px;
     color: var(--ink);
     padding: 4px 2px;
@@ -221,7 +282,7 @@
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     padding: 7px 14px;
     border-radius: 6px;
@@ -232,7 +293,7 @@
   #tab-budget .summary { margin-top: 36px; padding-top: 20px; border-top: 2px solid var(--ink); }
   #tab-budget .summary-line { display: flex; flex-wrap: wrap; row-gap: 2px; justify-content: space-between; font-size: 15px; padding: 6px 0; }
   #tab-budget .summary-line .label { color: var(--ink-soft); }
-  #tab-budget .summary-line .value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+  #tab-budget .summary-line .value { font-family: var(--font-mono); font-weight: 500; }
   #tab-budget .summary-line.income .value { color: var(--income); }
   #tab-budget .summary-line.expense .value { color: var(--expense); }
   #tab-budget .net-line {
@@ -247,8 +308,8 @@
     border-radius: 8px;
     background: var(--gold-bg);
   }
-  #tab-budget .net-line .label { font-family: 'Lora', serif; font-weight: 600; font-size: 16px; color: var(--gold); }
-  #tab-budget .net-line .value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 22px; color: var(--gold); }
+  #tab-budget .net-line .label { font-family: var(--font-header); font-weight: 600; font-size: 16px; color: var(--gold); }
+  #tab-budget .net-line .value { font-family: var(--font-mono); font-weight: 500; font-size: 22px; color: var(--gold); }
   #tab-budget .net-line.negative { background: var(--expense-bg); }
   #tab-budget .net-line.negative .label,
   #tab-budget .net-line.negative .value { color: var(--expense); }
@@ -257,11 +318,11 @@
   /* ================= Income tab (scoped) ================= */
   #tab-income .sheet { max-width: 760px; margin: 0 auto; }
   #tab-income h1 {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 28px;
     margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--letter-spacing-header);
   }
   #tab-income .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0 0 32px; }
   #tab-income .section { margin-bottom: 28px; }
@@ -273,8 +334,8 @@
     padding-bottom: 8px;
     margin-bottom: 4px;
   }
-  #tab-income .section-head h2 { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; margin: 0; color: var(--income); }
-  #tab-income .section-total { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500; }
+  #tab-income .section-head h2 { font-family: var(--font-header); font-size: 16px; font-weight: 600; margin: 0; color: var(--income); }
+  #tab-income .section-total { font-family: var(--font-mono); font-size: 15px; font-weight: 500; }
   #tab-income .row {
     display: flex;
     align-items: center;
@@ -291,7 +352,7 @@
     min-width: 0;
     border: none;
     background: transparent;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 15px;
     color: var(--ink);
     padding: 4px 2px;
@@ -302,21 +363,21 @@
     border: none;
     background: var(--paper-line);
     border-radius: 5px;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     color: var(--ink);
     padding: 5px 6px;
     max-width: 118px;
   }
   #tab-income .freq-select:focus { outline: none; }
-  #tab-income .amount-wrap { display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 15px; flex-shrink: 0; }
+  #tab-income .amount-wrap { display: flex; align-items: center; font-family: var(--font-mono); font-size: 15px; flex-shrink: 0; }
   #tab-income .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
   #tab-income .row input[type="number"] {
     width: 84px;
     text-align: right;
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 15px;
     color: var(--ink);
     padding: 4px 2px;
@@ -329,7 +390,7 @@
     flex-shrink: 0;
     width: 108px;
     text-align: right;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     color: var(--income);
   }
@@ -343,7 +404,7 @@
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     padding: 7px 14px;
     border-radius: 6px;
@@ -362,18 +423,18 @@
     border-radius: 8px;
     background: var(--gold-bg);
   }
-  #tab-income .net-line .label { font-family: 'Lora', serif; font-weight: 600; font-size: 16px; color: var(--gold); }
-  #tab-income .net-line .value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 22px; color: var(--gold); }
+  #tab-income .net-line .label { font-family: var(--font-header); font-weight: 600; font-size: 16px; color: var(--gold); }
+  #tab-income .net-line .value { font-family: var(--font-mono); font-weight: 500; font-size: 22px; color: var(--gold); }
   #tab-income .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
   /* ================= Subscriptions tab (scoped) ================= */
   #tab-subscriptions .sheet { max-width: 640px; margin: 0 auto; }
   #tab-subscriptions h1 {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 28px;
     margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--letter-spacing-header);
   }
   #tab-subscriptions .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0 0 32px; }
   #tab-subscriptions .section { margin-bottom: 28px; }
@@ -385,8 +446,8 @@
     padding-bottom: 8px;
     margin-bottom: 4px;
   }
-  #tab-subscriptions .section-head h2 { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; margin: 0; color: var(--expense); }
-  #tab-subscriptions .section-total { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500; }
+  #tab-subscriptions .section-head h2 { font-family: var(--font-header); font-size: 16px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-subscriptions .section-total { font-family: var(--font-mono); font-size: 15px; font-weight: 500; }
   #tab-subscriptions .row {
     display: flex;
     align-items: center;
@@ -402,20 +463,20 @@
     flex: 1;
     border: none;
     background: transparent;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 15px;
     color: var(--ink);
     padding: 4px 2px;
   }
   #tab-subscriptions .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
-  #tab-subscriptions .amount-wrap { display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 15px; }
+  #tab-subscriptions .amount-wrap { display: flex; align-items: center; font-family: var(--font-mono); font-size: 15px; }
   #tab-subscriptions .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
   #tab-subscriptions .row input[type="number"] {
     width: 90px;
     text-align: right;
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 15px;
     color: var(--ink);
     padding: 4px 2px;
@@ -434,7 +495,7 @@
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     padding: 7px 14px;
     border-radius: 6px;
@@ -453,19 +514,19 @@
     border-radius: 8px;
     background: var(--gold-bg);
   }
-  #tab-subscriptions .net-line .label { font-family: 'Lora', serif; font-weight: 600; font-size: 16px; color: var(--gold); }
-  #tab-subscriptions .net-line .value { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 22px; color: var(--gold); }
+  #tab-subscriptions .net-line .label { font-family: var(--font-header); font-weight: 600; font-size: 16px; color: var(--gold); }
+  #tab-subscriptions .net-line .value { font-family: var(--font-mono); font-weight: 500; font-size: 22px; color: var(--gold); }
   #tab-subscriptions .footnote { margin-top: 14px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
   /* ================= Mortgage tab (scoped) ================= */
   #tab-mortgage .page { max-width: 820px; margin: 0 auto; }
   #tab-mortgage .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
   #tab-mortgage h1 {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 28px;
     margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--letter-spacing-header);
   }
   #tab-mortgage .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
   #tab-mortgage .add-btn {
@@ -473,7 +534,7 @@
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
     padding: 8px 16px;
@@ -492,7 +553,7 @@
   #tab-mortgage .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-mortgage .col-head-cell { position: relative; text-align: right; }
   #tab-mortgage .col-head-cell input.name {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 14px;
     border: none;
@@ -517,16 +578,16 @@
   #tab-mortgage .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-mortgage .section { margin-bottom: 26px; }
   #tab-mortgage .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
-  #tab-mortgage .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; }
+  #tab-mortgage .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; }
   #tab-mortgage .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
-  #tab-mortgage .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-mortgage .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
   #tab-mortgage .field span { color: var(--ink-soft); margin: 0 2px; }
   #tab-mortgage .field input[type="number"] {
     width: 78px;
     text-align: right;
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
     padding: 4px 2px;
@@ -538,7 +599,7 @@
   #tab-mortgage .field select {
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 13px;
     color: var(--ink);
     padding: 4px 2px;
@@ -548,12 +609,12 @@
   #tab-mortgage .field select:focus { outline: none; }
   #tab-mortgage .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
   #tab-mortgage .summary-block .row { padding: 8px 0; border-bottom: none; }
-  #tab-mortgage .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-mortgage .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
   #tab-mortgage .principal-row .value-text { color: var(--income); }
   #tab-mortgage .interest-row .value-text { color: var(--expense); }
   #tab-mortgage .payment-block { margin-top: 22px; }
   #tab-mortgage .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
-  #tab-mortgage .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-mortgage .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
   #tab-mortgage .payment-row .value-text { font-size: 17px; color: var(--gold); }
   #tab-mortgage .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
@@ -561,11 +622,11 @@
   #tab-food .page { max-width: 820px; margin: 0 auto; }
   #tab-food .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
   #tab-food h1 {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 28px;
     margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--letter-spacing-header);
   }
   #tab-food .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
   #tab-food .add-btn {
@@ -573,7 +634,7 @@
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
     padding: 8px 16px;
@@ -591,7 +652,7 @@
   #tab-food .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-food .col-head-cell { position: relative; text-align: right; }
   #tab-food .col-head-cell input.name {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 14px;
     border: none;
@@ -616,16 +677,16 @@
   #tab-food .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-food .section { margin-bottom: 26px; }
   #tab-food .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
-  #tab-food .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-food .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
   #tab-food .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
-  #tab-food .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-food .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
   #tab-food .field span { color: var(--ink-soft); margin: 0 2px; }
   #tab-food .field input[type="number"] {
     width: 78px;
     text-align: right;
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
     padding: 4px 2px;
@@ -636,9 +697,9 @@
   #tab-food .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
   #tab-food .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
   #tab-food .payment-block { margin-top: 4px; }
-  #tab-food .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-food .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
   #tab-food .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
-  #tab-food .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-food .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
   #tab-food .payment-row .value-text { font-size: 17px; color: var(--gold); }
   #tab-food .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
@@ -646,11 +707,11 @@
   #tab-car .page { max-width: 820px; margin: 0 auto; }
   #tab-car .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
   #tab-car h1 {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 28px;
     margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--letter-spacing-header);
   }
   #tab-car .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
   #tab-car .add-btn {
@@ -658,7 +719,7 @@
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
     padding: 8px 16px;
@@ -677,7 +738,7 @@
   #tab-car .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-car .col-head-cell { position: relative; text-align: right; }
   #tab-car .col-head-cell input.name {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 14px;
     border: none;
@@ -702,16 +763,16 @@
   #tab-car .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-car .section { margin-bottom: 26px; }
   #tab-car .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
-  #tab-car .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-car .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
   #tab-car .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
-  #tab-car .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-car .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
   #tab-car .field span { color: var(--ink-soft); margin: 0 2px; }
   #tab-car .field input[type="number"] {
     width: 78px;
     text-align: right;
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
     padding: 4px 2px;
@@ -722,9 +783,9 @@
   #tab-car .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
   #tab-car .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
   #tab-car .payment-block { margin-top: 4px; }
-  #tab-car .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-car .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
   #tab-car .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
-  #tab-car .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-car .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
   #tab-car .payment-row .value-text { font-size: 17px; color: var(--gold); }
   #tab-car .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
@@ -732,11 +793,11 @@
   #tab-utilities .page { max-width: 820px; margin: 0 auto; }
   #tab-utilities .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
   #tab-utilities h1 {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 28px;
     margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--letter-spacing-header);
   }
   #tab-utilities .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
   #tab-utilities .add-btn {
@@ -744,7 +805,7 @@
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
     padding: 8px 16px;
@@ -762,7 +823,7 @@
   #tab-utilities .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-utilities .col-head-cell { position: relative; text-align: right; }
   #tab-utilities .col-head-cell input.name {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 14px;
     border: none;
@@ -787,16 +848,16 @@
   #tab-utilities .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-utilities .section { margin-bottom: 26px; }
   #tab-utilities .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
-  #tab-utilities .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
+  #tab-utilities .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--expense); }
   #tab-utilities .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
-  #tab-utilities .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-utilities .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
   #tab-utilities .field span { color: var(--ink-soft); margin: 0 2px; }
   #tab-utilities .field input[type="number"] {
     width: 78px;
     text-align: right;
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
     padding: 4px 2px;
@@ -807,9 +868,9 @@
   #tab-utilities .field input:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
   #tab-utilities .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
   #tab-utilities .payment-block { margin-top: 4px; }
-  #tab-utilities .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-utilities .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
   #tab-utilities .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
-  #tab-utilities .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-utilities .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
   #tab-utilities .payment-row .value-text { font-size: 17px; color: var(--gold); }
   #tab-utilities .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
@@ -817,11 +878,11 @@
   #tab-savings .page { max-width: 820px; margin: 0 auto; }
   #tab-savings .header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; }
   #tab-savings h1 {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 28px;
     margin: 0 0 4px;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--letter-spacing-header);
   }
   #tab-savings .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0; }
   #tab-savings .add-btn {
@@ -829,7 +890,7 @@
     background: none;
     border: 1px dashed var(--ink-soft);
     color: var(--ink-soft);
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
     padding: 8px 16px;
@@ -848,7 +909,7 @@
   #tab-savings .col-head-row { padding-bottom: 12px; margin-bottom: 6px; border-bottom: 2px solid var(--ink); }
   #tab-savings .col-head-cell { position: relative; text-align: right; }
   #tab-savings .col-head-cell input.name {
-    font-family: 'Lora', serif;
+    font-family: var(--font-header);
     font-weight: 600;
     font-size: 14px;
     border: none;
@@ -873,16 +934,16 @@
   #tab-savings .col-head-cell.is-primary { background: var(--gold-bg); border-radius: 6px; padding: 4px 6px; margin: -4px -6px; }
   #tab-savings .section { margin-bottom: 26px; }
   #tab-savings .section-head { border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 2px; }
-  #tab-savings .section-head h2 { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; margin: 0; color: var(--income); }
+  #tab-savings .section-head h2 { font-family: var(--font-header); font-size: 15px; font-weight: 600; margin: 0; color: var(--income); }
   #tab-savings .row { padding: 11px 0; border-bottom: 1px solid var(--paper-line); }
-  #tab-savings .field { display: flex; align-items: center; justify-content: flex-end; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  #tab-savings .field { display: flex; align-items: center; justify-content: flex-end; font-family: var(--font-mono); font-size: 14px; }
   #tab-savings .field span { color: var(--ink-soft); margin: 0 2px; }
   #tab-savings .field input[type="number"] {
     width: 78px;
     text-align: right;
     border: none;
     background: transparent;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--ink);
     padding: 4px 2px;
@@ -894,32 +955,32 @@
   #tab-savings .summary-block { margin-top: 18px; padding-top: 12px; border-top: 2px solid var(--ink); }
   #tab-savings .summary-block .row { padding: 8px 0; border-bottom: none; }
   #tab-savings .payment-block { margin-top: 4px; }
-  #tab-savings .value-text { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; font-size: 14px; display: block; }
+  #tab-savings .value-text { font-family: var(--font-mono); font-weight: 500; text-align: right; font-size: 14px; display: block; }
   #tab-savings .payment-row { padding: 16px 18px; border-radius: 8px; background: var(--gold-bg); margin-bottom: 6px; }
-  #tab-savings .payment-row .field-label { font-family: 'Lora', serif; font-weight: 600; font-size: 14px; color: var(--gold); }
+  #tab-savings .payment-row .field-label { font-family: var(--font-header); font-weight: 600; font-size: 14px; color: var(--gold); }
   #tab-savings .payment-row .value-text { font-size: 17px; color: var(--gold); }
   #tab-savings .footnote { margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 
   /* ================= Print report ================= */
-  #print-report h1 { font-family: 'Lora', serif; font-weight: 600; font-size: 24px; margin: 0 0 2px; }
+  #print-report h1 { font-family: var(--font-header); font-weight: 600; font-size: 24px; margin: 0 0 2px; }
   #print-report .report-date { color: var(--ink-soft); font-size: 13px; margin: 0 0 28px; }
   #print-report h2 {
-    font-family: 'Lora', serif; font-weight: 600; font-size: 17px;
+    font-family: var(--font-header); font-weight: 600; font-size: 17px;
     margin: 26px 0 10px; border-bottom: 2px solid var(--ink); padding-bottom: 6px;
   }
   #print-report h2:first-of-type { margin-top: 0; }
   #print-report .report-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 13px; }
   #print-report .report-table th, #print-report .report-table td { padding: 6px 4px; border-bottom: 1px solid var(--paper-line); text-align: left; }
-  #print-report .report-table th:last-child, #print-report .report-table td:last-child { text-align: right; font-family: 'IBM Plex Mono', monospace; }
-  #print-report .report-table thead th { font-family: 'Lora', serif; font-weight: 600; border-bottom: 2px solid var(--ink); }
+  #print-report .report-table th:last-child, #print-report .report-table td:last-child { text-align: right; font-family: var(--font-mono); }
+  #print-report .report-table thead th { font-family: var(--font-header); font-weight: 600; border-bottom: 2px solid var(--ink); }
   #print-report .report-table .report-subhead td { font-weight: 600; padding-top: 16px; border-bottom: 2px solid var(--ink); }
   #print-report .report-table .report-total td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
   #print-report .report-net {
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px 14px; border: 2px solid var(--gold); border-radius: 6px;
-    font-family: 'Lora', serif; font-weight: 600; color: var(--gold); margin-bottom: 8px;
+    font-family: var(--font-header); font-weight: 600; color: var(--gold); margin-bottom: 8px;
   }
-  #print-report .report-net .value { font-family: 'IBM Plex Mono', monospace; font-size: 18px; }
+  #print-report .report-net .value { font-family: var(--font-mono); font-size: 18px; }
   #print-report .report-net.negative { border-color: var(--expense); color: var(--expense); }
 
   @media print {
@@ -935,6 +996,16 @@
     }
     @page { margin: 0.6in; }
   }
+
+  /* ================= Theme skins (decorative touches) ================= */
+  [data-skin="elder"] h1::before { content: "\1FAB6  "; }
+  [data-skin="machina"] h1,
+  [data-skin="machina"] .net-line .value,
+  [data-skin="machina"] .row.locked input {
+    text-shadow: 0 0 8px currentColor;
+  }
+  [data-skin="machina"] .tab-btn.active { box-shadow: 0 0 10px rgba(82,255,198,0.35); }
+  [data-skin="machina"] .tab-btn { padding: 9px 13px 9px; font-size: 13px; letter-spacing: -0.02em; }
 </style>
 </head>
 <body>
@@ -942,6 +1013,11 @@
 
 <div class="app-shell">
   <div class="save-bar">
+    <select class="skin-select" id="skin-select" onchange="setSkin(this.value)" title="Theme" aria-label="Theme">
+      <option value="none">None</option>
+      <option value="elder">Elder</option>
+      <option value="machina">Machina</option>
+    </select>
     <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch to light mode" aria-label="Switch to light mode">&#9728;</button>
     <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
     <button class="save-btn export-btn" id="export-pdf-btn" onclick="exportPdf()" hidden="">Export PDF</button>
@@ -3128,13 +3204,18 @@
   }
 
   function syncThemeToggleLabel() {
+    const skin = document.documentElement.getAttribute('data-skin');
+    const hasSkin = skin === 'elder' || skin === 'machina';
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const btn = document.getElementById('theme-toggle-btn');
     if (!btn) return;
     btn.innerHTML = isDark ? '&#9728;' : '&#9790;';
-    const label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+    const label = hasSkin
+      ? 'Light/dark mode is fixed by the ' + (skin === 'elder' ? 'Elder' : 'Machina') + ' theme'
+      : (isDark ? 'Switch to light mode' : 'Switch to dark mode');
     btn.title = label;
     btn.setAttribute('aria-label', label);
+    btn.disabled = hasSkin;
   }
 
   function toggleTheme() {
@@ -3149,12 +3230,28 @@
     syncThemeToggleLabel();
   }
 
+  function setSkin(skin) {
+    if (skin === 'elder' || skin === 'machina') {
+      document.documentElement.setAttribute('data-skin', skin);
+    } else {
+      document.documentElement.removeAttribute('data-skin');
+      skin = 'none';
+    }
+    try { localStorage.setItem('munny_skin', skin); } catch (e) {}
+    const select = document.getElementById('skin-select');
+    if (select) select.value = skin;
+    syncThemeToggleLabel();
+  }
+
   function loadApp() {
     // Google's sign-in popup needs a real click, so it can't happen automatically on
     // page load — fields start at their zeroed default; click "Sign in with Google"
     // (or Save) to load/push the real thing via Drive.
     applyLoadedData(null);
     setGoogleSignedInUi(false);
+    const currentSkin = document.documentElement.getAttribute('data-skin') || 'none';
+    const select = document.getElementById('skin-select');
+    if (select) select.value = currentSkin;
     syncThemeToggleLabel();
   }
 
