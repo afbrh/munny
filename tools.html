@@ -94,6 +94,7 @@
 
   /* ---------- app shell / tabs ---------- */
   .app-shell { max-width: 820px; margin: 0 auto; }
+  .app-header-sticky { position: sticky; top: 0; z-index: 100; background: var(--paper); padding-top: 4px; }
   .tab-bar {
     display: flex;
     align-items: flex-end;
@@ -1159,6 +1160,7 @@
 <script id="saved-data" type="application/json"></script>
 
 <div class="app-shell">
+  <div class="app-header-sticky">
   <div class="save-bar">
     <div class="brand-mark"><span>Ry's Tools</span></div>
     <div class="tool-dropdown">
@@ -1189,7 +1191,7 @@
       <span class="save-status" id="save-status"></span>
     </div>
   </div>
-  <div id="app-content">
+  <div id="app-header-tabs">
   <div class="signed-in-banner" id="signed-in-banner"></div>
   <div class="tab-bar">
     <div class="tabs">
@@ -1211,8 +1213,10 @@
       </div>
     </div>
   </div>
+  </div>
+  </div>
 
-
+  <div id="app-content">
   <div id="tab-budget" class="tab-panel" hidden="">
     <div class="sheet">
       <h1>Monthly budget ledger</h1>
@@ -3287,9 +3291,11 @@
 
   function applyToolVisibility(tool) {
     const controls = document.getElementById('tool-controls');
+    const headerTabs = document.getElementById('app-header-tabs');
     const content = document.getElementById('app-content');
     const show = tool === 'budget';
     if (controls) controls.hidden = !show;
+    if (headerTabs) headerTabs.hidden = !show;
     if (content) content.hidden = !show;
   }
 
