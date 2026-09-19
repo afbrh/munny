@@ -2791,7 +2791,11 @@
           accessToken = resp.access_token;
           resolve(accessToken);
         };
-        tokenClient.requestAccessToken({ prompt: '' });
+        // prompt:'' asks Google to try a silent, invisible sign-in first — in Safari this
+        // seems to open the popup, fail to complete quietly, and close itself before you
+        // can interact with it. Forcing consent every time is a little more friction but
+        // actually shows the real interactive screen instead of a flash-and-close window.
+        tokenClient.requestAccessToken({ prompt: 'consent' });
       });
     }
 
