@@ -2775,7 +2775,18 @@
             callback: () => {} // replaced per-request below
           });
         }
+        let settled = false;
+        // If the popup gets closed/dismissed without Google ever calling back
+        // (e.g. blocked, or the user closes it), don't hang forever.
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          reject(new Error('Sign-in timed out — the popup may have been closed or blocked. Try again.'));
+        }, 60000);
         tokenClient.callback = (resp) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
           if (resp.error) { reject(new Error(resp.error)); return; }
           accessToken = resp.access_token;
           resolve(accessToken);
@@ -2787,7 +2798,17 @@
     async function api(url, options) {
       if (!accessToken) throw new Error('not signed in');
       const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
-      const resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers }));
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      let resp;
+      try {
+        resp = await fetch(url, Object.assign({ cache: 'no-store' }, options, { headers, signal: controller.signal }));
+      } catch (e) {
+        if (e.name === 'AbortError') throw new Error('Google Drive request timed out — check your connection and try again.');
+        throw new Error('Network error talking to Google Drive: ' + e.message);
+      } finally {
+        clearTimeout(timer);
+      }
       if (resp.status === 401) accessToken = null; // expired/revoked — isSignedIn() will now correctly report false
       return resp;
     }
