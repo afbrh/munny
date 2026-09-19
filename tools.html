@@ -1788,15 +1788,11 @@
       { id: 's2', name: 'Scenario B', values: Object.assign({}, DEFAULTS, { term: '15' }) }
     ];
     let nextLetter = 67;
-    let primaryIds = ['s1'];
+    let primaryId = 's1';
 
-    function togglePrimary(id, checked) {
+    function selectPrimary(id) {
       if (!scenarios.some(s => s.id === id)) return;
-      if (checked) {
-        if (!primaryIds.includes(id)) primaryIds.push(id);
-      } else {
-        primaryIds = primaryIds.filter(pid => pid !== id);
-      }
+      primaryId = id;
       render();
     }
 
@@ -1821,8 +1817,7 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      primaryIds = primaryIds.filter(pid => pid !== id);
-      if (!primaryIds.length) primaryIds = [scenarios[0].id];
+      if (primaryId === id) primaryId = scenarios[0].id;
       render();
     }
 
@@ -1839,7 +1834,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = primaryIds.includes(scenario.id);
+        const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -1849,11 +1844,12 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Include this scenario\'s monthly payment in the Monthly Budget "Housing" amount';
+        toggle.title = 'Use this scenario\'s monthly payment for the Monthly Budget "Housing" amount';
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
+        checkbox.type = 'radio';
+        checkbox.name = 'mortgage-primary-scenario';
         checkbox.checked = isPrimary;
-        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
+        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
         const toggleText = document.createElement('span');
         toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
         toggle.appendChild(checkbox);
@@ -2049,36 +2045,36 @@
         setText('renters-insurance-monthly', currency(rentersInsuranceMonthly));
         setText('monthly-payment', currency(totalMonthly));
 
-        if (primaryIds.includes(scenario.id)) {
-          budgetTotal += totalMonthly;
+        if (scenario.id === primaryId) {
+          budgetTotal = totalMonthly;
         }
       });
       BudgetApp.setLockedAmount('house-payment', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        if (Array.isArray(state.primaryIds)) {
-          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          if (!primaryIds.length) primaryIds = [scenarios[0].id];
-        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
-          primaryIds = [state.primaryId]; // migrate old single-primary format
+        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
+          primaryId = state.primaryId;
+        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
+          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
         } else {
-          primaryIds = [scenarios[0].id];
+          primaryId = scenarios[0].id;
         }
       } else {
-        primaryIds = [scenarios[0].id];
+        primaryId = scenarios[0].id;
       }
       render();
     }
 
-    return { addScenario, getState, setState, togglePrimary };
+    return { addScenario, getState, setState, selectPrimary };
   })();
 
   /* ================= Food app (namespaced) ================= */
@@ -2093,7 +2089,7 @@
       { id: 'f1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
     ];
     let nextLetter = 66; // 'B'
-    let primaryIds = ['f1'];
+    let primaryId = 'f1';
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2106,13 +2102,9 @@
       return e;
     }
 
-    function togglePrimary(id, checked) {
+    function selectPrimary(id) {
       if (!scenarios.some(s => s.id === id)) return;
-      if (checked) {
-        if (!primaryIds.includes(id)) primaryIds.push(id);
-      } else {
-        primaryIds = primaryIds.filter(pid => pid !== id);
-      }
+      primaryId = id;
       render();
     }
 
@@ -2126,8 +2118,7 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      primaryIds = primaryIds.filter(pid => pid !== id);
-      if (!primaryIds.length) primaryIds = [scenarios[0].id];
+      if (primaryId === id) primaryId = scenarios[0].id;
       render();
     }
 
@@ -2144,7 +2135,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = primaryIds.includes(scenario.id);
+        const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -2154,11 +2145,12 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Food" amount';
+        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Food" amount';
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
+        checkbox.type = 'radio';
+        checkbox.name = 'food-primary-scenario';
         checkbox.checked = isPrimary;
-        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
+        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
         const toggleText = document.createElement('span');
         toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
         toggle.appendChild(checkbox);
@@ -2254,28 +2246,28 @@
         const totalEl = document.getElementById('food-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (primaryIds.includes(scenario.id)) {
-          budgetTotal += total;
+        if (scenario.id === primaryId) {
+          budgetTotal = total;
         }
       });
       BudgetApp.setLockedAmount('food', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        if (Array.isArray(state.primaryIds)) {
-          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          if (!primaryIds.length) primaryIds = [scenarios[0].id];
-        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
-          primaryIds = [state.primaryId];
+        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
+          primaryId = state.primaryId;
+        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
+          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
         } else {
-          primaryIds = [scenarios[0].id];
+          primaryId = scenarios[0].id;
         }
       } else if (state && (state.groceries !== undefined || state.eatingOut !== undefined)) {
         // Migrate the older single-scenario format.
@@ -2284,15 +2276,15 @@
           name: 'Scenario A',
           values: { groceries: parseFloat(state.groceries) || 0, eatingOut: parseFloat(state.eatingOut) || 0 }
         }];
-        primaryIds = ['f1'];
+        primaryId = 'f1';
       } else {
         scenarios = [{ id: 'f1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryIds = ['f1'];
+        primaryId = 'f1';
       }
       render();
     }
 
-    return { addScenario, getState, setState, togglePrimary };
+    return { addScenario, getState, setState, selectPrimary };
   })();
 
   /* ================= Car app (namespaced) ================= */
@@ -2310,7 +2302,7 @@
       { id: 'c1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
     ];
     let nextLetter = 66; // 'B'
-    let primaryIds = ['c1'];
+    let primaryId = 'c1';
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2323,13 +2315,9 @@
       return e;
     }
 
-    function togglePrimary(id, checked) {
+    function selectPrimary(id) {
       if (!scenarios.some(s => s.id === id)) return;
-      if (checked) {
-        if (!primaryIds.includes(id)) primaryIds.push(id);
-      } else {
-        primaryIds = primaryIds.filter(pid => pid !== id);
-      }
+      primaryId = id;
       render();
     }
 
@@ -2343,8 +2331,7 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      primaryIds = primaryIds.filter(pid => pid !== id);
-      if (!primaryIds.length) primaryIds = [scenarios[0].id];
+      if (primaryId === id) primaryId = scenarios[0].id;
       render();
     }
 
@@ -2361,7 +2348,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = primaryIds.includes(scenario.id);
+        const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -2371,11 +2358,12 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Car" amount';
+        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Car" amount';
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
+        checkbox.type = 'radio';
+        checkbox.name = 'car-primary-scenario';
         checkbox.checked = isPrimary;
-        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
+        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
         const toggleText = document.createElement('span');
         toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
         toggle.appendChild(checkbox);
@@ -2476,37 +2464,37 @@
         const totalEl = document.getElementById('car-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (primaryIds.includes(scenario.id)) {
-          budgetTotal += total;
+        if (scenario.id === primaryId) {
+          budgetTotal = total;
         }
       });
       BudgetApp.setLockedAmount('car', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        if (Array.isArray(state.primaryIds)) {
-          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          if (!primaryIds.length) primaryIds = [scenarios[0].id];
-        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
-          primaryIds = [state.primaryId];
+        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
+          primaryId = state.primaryId;
+        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
+          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
         } else {
-          primaryIds = [scenarios[0].id];
+          primaryId = scenarios[0].id;
         }
       } else {
         scenarios = [{ id: 'c1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryIds = ['c1'];
+        primaryId = 'c1';
       }
       render();
     }
 
-    return { addScenario, getState, setState, togglePrimary };
+    return { addScenario, getState, setState, selectPrimary };
   })();
 
   /* ================= Utilities app (namespaced) ================= */
@@ -2524,7 +2512,7 @@
       { id: 'u1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
     ];
     let nextLetter = 66; // 'B'
-    let primaryIds = ['u1'];
+    let primaryId = 'u1';
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2537,13 +2525,9 @@
       return e;
     }
 
-    function togglePrimary(id, checked) {
+    function selectPrimary(id) {
       if (!scenarios.some(s => s.id === id)) return;
-      if (checked) {
-        if (!primaryIds.includes(id)) primaryIds.push(id);
-      } else {
-        primaryIds = primaryIds.filter(pid => pid !== id);
-      }
+      primaryId = id;
       render();
     }
 
@@ -2557,8 +2541,7 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      primaryIds = primaryIds.filter(pid => pid !== id);
-      if (!primaryIds.length) primaryIds = [scenarios[0].id];
+      if (primaryId === id) primaryId = scenarios[0].id;
       render();
     }
 
@@ -2575,7 +2558,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = primaryIds.includes(scenario.id);
+        const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -2585,11 +2568,12 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Utilities" amount';
+        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Utilities" amount';
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
+        checkbox.type = 'radio';
+        checkbox.name = 'utilities-primary-scenario';
         checkbox.checked = isPrimary;
-        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
+        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
         const toggleText = document.createElement('span');
         toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
         toggle.appendChild(checkbox);
@@ -2684,37 +2668,37 @@
         const totalEl = document.getElementById('utilities-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
 
-        if (primaryIds.includes(scenario.id)) {
-          budgetTotal += total;
+        if (scenario.id === primaryId) {
+          budgetTotal = total;
         }
       });
       BudgetApp.setLockedAmount('utilities', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        if (Array.isArray(state.primaryIds)) {
-          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          if (!primaryIds.length) primaryIds = [scenarios[0].id];
-        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
-          primaryIds = [state.primaryId];
+        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
+          primaryId = state.primaryId;
+        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
+          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
         } else {
-          primaryIds = [scenarios[0].id];
+          primaryId = scenarios[0].id;
         }
       } else {
         scenarios = [{ id: 'u1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryIds = ['u1'];
+        primaryId = 'u1';
       }
       render();
     }
 
-    return { addScenario, getState, setState, togglePrimary };
+    return { addScenario, getState, setState, selectPrimary };
   })();
 
   /* ================= Savings app (namespaced) ================= */
@@ -2733,7 +2717,7 @@
       { id: 'sv1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }
     ];
     let nextLetter = 66; // 'B'
-    let primaryIds = ['sv1'];
+    let primaryId = 'sv1';
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2746,13 +2730,9 @@
       return e;
     }
 
-    function togglePrimary(id, checked) {
+    function selectPrimary(id) {
       if (!scenarios.some(s => s.id === id)) return;
-      if (checked) {
-        if (!primaryIds.includes(id)) primaryIds.push(id);
-      } else {
-        primaryIds = primaryIds.filter(pid => pid !== id);
-      }
+      primaryId = id;
       render();
     }
 
@@ -2766,8 +2746,7 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      primaryIds = primaryIds.filter(pid => pid !== id);
-      if (!primaryIds.length) primaryIds = [scenarios[0].id];
+      if (primaryId === id) primaryId = scenarios[0].id;
       render();
     }
 
@@ -2784,7 +2763,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = primaryIds.includes(scenario.id);
+        const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -2794,11 +2773,12 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Savings" amount';
+        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Savings" amount';
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
+        checkbox.type = 'radio';
+        checkbox.name = 'savings-primary-scenario';
         checkbox.checked = isPrimary;
-        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
+        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
         const toggleText = document.createElement('span');
         toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
         toggle.appendChild(checkbox);
@@ -2920,37 +2900,37 @@
         const monthlyEl = document.getElementById('savings-monthly-' + scenario.id);
         if (monthlyEl) monthlyEl.textContent = currency(monthlyTotal);
 
-        if (primaryIds.includes(scenario.id)) {
-          budgetTotal += monthlyTotal;
+        if (scenario.id === primaryId) {
+          budgetTotal = monthlyTotal;
         }
       });
       BudgetApp.setLockedAmount('savings', budgetTotal);
     }
 
     function getState() {
-      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryIds: primaryIds.slice() };
+      return { scenarios: JSON.parse(JSON.stringify(scenarios)), nextLetter, primaryId };
     }
 
     function setState(state) {
       if (state && state.scenarios && state.scenarios.length) {
         scenarios = state.scenarios;
         nextLetter = state.nextLetter || nextLetter;
-        if (Array.isArray(state.primaryIds)) {
-          primaryIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
-          if (!primaryIds.length) primaryIds = [scenarios[0].id];
-        } else if (state.primaryId && scenarios.some(s => s.id === state.primaryId)) {
-          primaryIds = [state.primaryId];
+        if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
+          primaryId = state.primaryId;
+        } else if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
+          const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+          primaryId = validIds.length ? validIds[0] : scenarios[0].id;
         } else {
-          primaryIds = [scenarios[0].id];
+          primaryId = scenarios[0].id;
         }
       } else {
         scenarios = [{ id: 'sv1', name: 'Scenario A', values: Object.assign({}, DEFAULTS) }];
-        primaryIds = ['sv1'];
+        primaryId = 'sv1';
       }
       render();
     }
 
-    return { addScenario, getState, setState, togglePrimary };
+    return { addScenario, getState, setState, selectPrimary };
   })();
 
   /* ================= Subscriptions app (namespaced) ================= */
@@ -2959,7 +2939,7 @@
     let scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
     let nextLetter = 66; // 'B'
     let nextRowId = 1;
-    let primaryIds = ['sc1'];
+    let primaryId = 'sc1';
 
     function currency(n) {
       return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2972,13 +2952,9 @@
       return e;
     }
 
-    function togglePrimary(id, checked) {
+    function selectPrimary(id) {
       if (!scenarios.some(s => s.id === id)) return;
-      if (checked) {
-        if (!primaryIds.includes(id)) primaryIds.push(id);
-      } else {
-        primaryIds = primaryIds.filter(pid => pid !== id);
-      }
+      primaryId = id;
       render();
     }
 
@@ -2992,8 +2968,7 @@
     function removeScenario(id) {
       if (scenarios.length <= 1) return;
       scenarios = scenarios.filter(s => s.id !== id);
-      primaryIds = primaryIds.filter(pid => pid !== id);
-      if (!primaryIds.length) primaryIds = [scenarios[0].id];
+      if (primaryId === id) primaryId = scenarios[0].id;
       render();
     }
 
@@ -3025,7 +3000,7 @@
       row.appendChild(el('div', 'row-label'));
       const values = el('div', 'row-values');
       scenarios.forEach(scenario => {
-        const isPrimary = primaryIds.includes(scenario.id);
+        const isPrimary = primaryId === scenario.id;
         const cell = el('div', 'value-cell col-head-cell' + (isPrimary ? ' is-primary' : ''));
         const input = document.createElement('input');
         input.className = 'name';
@@ -3035,11 +3010,12 @@
 
         const toggle = document.createElement('label');
         toggle.className = 'primary-toggle' + (isPrimary ? ' is-primary' : '');
-        toggle.title = 'Include this scenario\'s total in the Monthly Budget "Subscriptions" amount';
+        toggle.title = 'Use this scenario\'s total for the Monthly Budget "Subscriptions" amount';
         const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
+        checkbox.type = 'radio';
+        checkbox.name = 'subscriptions-primary-scenario';
         checkbox.checked = isPrimary;
-        checkbox.addEventListener('change', e => togglePrimary(scenario.id, e.target.checked));
+        checkbox.addEventListener('change', () => selectPrimary(scenario.id));
         const toggleText = document.createElement('span');
         toggleText.textContent = isPrimary ? 'Used in budget' : 'Use in budget';
         toggle.appendChild(checkbox);
@@ -3152,7 +3128,7 @@
         rows.forEach(r => { total += parseFloat(scenario.values[r.id]) || 0; });
         const totalEl = document.getElementById('sub-total-' + scenario.id);
         if (totalEl) totalEl.textContent = currency(total);
-        if (primaryIds.includes(scenario.id)) budgetTotal += total;
+        if (scenario.id === primaryId) budgetTotal = total;
       });
       BudgetApp.setLockedAmount('subscriptions', budgetTotal);
     }
@@ -3163,8 +3139,19 @@
         scenarios: scenarios.map(s => ({ id: s.id, name: s.name, values: Object.assign({}, s.values) })),
         nextLetter,
         nextRowId,
-        primaryIds: primaryIds.slice()
+        primaryId
       };
+    }
+
+    function resolvePrimaryId(state) {
+      if (typeof state.primaryId === 'string' && scenarios.some(s => s.id === state.primaryId)) {
+        return state.primaryId;
+      }
+      if (Array.isArray(state.primaryIds) && state.primaryIds.length) {
+        const validIds = state.primaryIds.filter(id => scenarios.some(s => s.id === id));
+        if (validIds.length) return validIds[0];
+      }
+      return scenarios.length ? scenarios[0].id : null;
     }
 
     function setState(state) {
@@ -3174,8 +3161,7 @@
         scenarios = state.scenarios.map(s => ({ id: s.id, name: s.name, values: Object.assign({}, s.values) }));
         nextLetter = state.nextLetter || nextLetter;
         nextRowId = state.nextRowId || nextRowId;
-        primaryIds = Array.isArray(state.primaryIds) ? state.primaryIds.filter(id => scenarios.some(s => s.id === id)) : [];
-        if (!primaryIds.length && scenarios.length) primaryIds = [scenarios[0].id];
+        primaryId = resolvePrimaryId(state);
       } else if (state && Array.isArray(state.scenarios) && state.scenarios.length && Array.isArray(state.scenarios[0].items)) {
         // Migrate from the short-lived per-scenario-list format (each scenario had its own named items) —
         // matches items across scenarios by name into shared rows, so nothing typed gets lost.
@@ -3195,14 +3181,13 @@
           });
         });
         nextLetter = state.nextLetter || nextLetter;
-        primaryIds = Array.isArray(state.primaryIds) ? state.primaryIds.filter(id => scenarios.some(s => s.id === id)) : [];
-        if (!primaryIds.length && scenarios.length) primaryIds = [scenarios[0].id];
+        primaryId = resolvePrimaryId(state);
       } else if (state && Array.isArray(state.items)) {
         // Legacy pre-scenarios save format: a single flat subscription list.
         rows = state.items.map(i => ({ id: 'r' + (nextRowId++), label: i.name }));
         scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
         rows.forEach((r, idx) => { scenarios[0].values[r.id] = state.items[idx].amount; });
-        primaryIds = ['sc1'];
+        primaryId = 'sc1';
       } else {
         rows = [
           { id: 'r' + (nextRowId++), label: 'Netflix' },
@@ -3210,12 +3195,12 @@
         ];
         scenarios = [{ id: 'sc1', name: 'Scenario A', values: {} }];
         rows.forEach(r => { scenarios[0].values[r.id] = ''; });
-        primaryIds = ['sc1'];
+        primaryId = 'sc1';
       }
       render();
     }
 
-    return { addScenario, getState, setState, togglePrimary };
+    return { addScenario, getState, setState, selectPrimary };
   })();
 
   /* ================= GitHub sync (namespaced) ================= */
