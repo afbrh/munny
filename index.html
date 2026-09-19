@@ -265,7 +265,7 @@
   .theme-dropdown-menu {
     position: absolute;
     top: calc(100% + 8px);
-    right: 0;
+    left: 0;
     min-width: 150px;
     background: var(--paper);
     border: 1.5px solid var(--ink);
@@ -1175,19 +1175,19 @@
         <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
       </div>
     </div>
-    <div class="tool-controls" id="tool-controls">
-      <div class="theme-dropdown">
-        <button class="theme-dropdown-toggle" id="theme-dropdown-toggle" onclick="toggleSettingsPanel(event)" aria-haspopup="true" aria-expanded="false">
-          <span id="theme-dropdown-label">Dark</span>
-          <span class="theme-dropdown-caret">&#9662;</span>
-        </button>
-        <div class="theme-dropdown-menu" id="appearance-group" role="menu" aria-label="Appearance">
-          <button type="button" class="theme-dropdown-item" data-value="light" role="menuitemradio" onclick="setAppearance('light')">Light</button>
-          <button type="button" class="theme-dropdown-item" data-value="dark" role="menuitemradio" onclick="setAppearance('dark')">Dark</button>
-          <button type="button" class="theme-dropdown-item" data-value="elder" role="menuitemradio" onclick="setAppearance('elder')">Elder</button>
-          <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
-        </div>
+    <div class="theme-dropdown">
+      <button class="theme-dropdown-toggle" id="theme-dropdown-toggle" onclick="toggleSettingsPanel(event)" aria-haspopup="true" aria-expanded="false">
+        <span id="theme-dropdown-label">Dark</span>
+        <span class="theme-dropdown-caret">&#9662;</span>
+      </button>
+      <div class="theme-dropdown-menu" id="appearance-group" role="menu" aria-label="Appearance">
+        <button type="button" class="theme-dropdown-item" data-value="light" role="menuitemradio" onclick="setAppearance('light')">Light</button>
+        <button type="button" class="theme-dropdown-item" data-value="dark" role="menuitemradio" onclick="setAppearance('dark')">Dark</button>
+        <button type="button" class="theme-dropdown-item" data-value="elder" role="menuitemradio" onclick="setAppearance('elder')">Elder</button>
+        <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
       </div>
+    </div>
+    <div class="tool-controls" id="tool-controls">
       <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
       <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
       <span class="save-status" id="save-status"></span>
