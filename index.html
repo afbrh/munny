@@ -402,14 +402,11 @@
   }
   #tab-budget .row input[type="text"]:focus { outline: none; border-bottom: 1px solid var(--ink-soft); }
   #tab-budget .row.locked { background: var(--gold-bg); border-radius: 6px; padding: 9px 8px; margin: 0 -8px; border-bottom-color: transparent; }
-  #tab-budget .row.locked input[type="text"] { color: var(--gold); font-weight: 600; cursor: default; }
-  #tab-budget .row.locked input[type="number"] { color: var(--gold); cursor: not-allowed; }
+  #tab-budget .row.locked input[type="text"] { color: var(--gold); font-weight: 600; cursor: pointer; border-radius: 3px; }
+  #tab-budget .row.locked input[type="text"]:hover { border-bottom: 1px solid var(--gold); }
+  #tab-budget .row.locked input[type="number"] { color: var(--gold); cursor: pointer; border-radius: 3px; }
+  #tab-budget .row.locked input[type="number"]:hover { border-bottom: 1px solid var(--gold); }
   #tab-budget .row.locked .lock-icon { font-size: 13px; color: var(--gold); margin-right: 2px; flex-shrink: 0; }
-  #tab-budget .row.locked .lock-hint {
-    font-size: 11px; color: var(--gold); background: none; border: none;
-    text-decoration: underline; cursor: pointer; padding: 0; margin-right: 4px; flex-shrink: 0;
-    font-family: var(--font-body);
-  }
   #tab-budget .amount-wrap { display: flex; align-items: center; font-family: var(--font-mono); font-size: 15px; }
   #tab-budget .amount-wrap span { color: var(--ink-soft); margin-right: 2px; }
   #tab-budget .row input[type="number"] {
@@ -1463,11 +1460,10 @@
         row.innerHTML =
           '<div class="row-main">' +
             '<span class="lock-icon" title="Only editable from ' + meta.label + '">&#128274;</span>' +
-            '<input type="text" value="' + (label || meta.label) + '" readonly>' +
+            '<input type="text" value="' + (label || meta.label) + '" readonly title="Open ' + meta.label + '" onclick="switchTab(\'' + meta.tabName + '\')" onkeydown="if(event.key===\'Enter\'){switchTab(\'' + meta.tabName + '\')}">' +
           '</div>' +
           '<div class="row-actions">' +
-            '<button type="button" class="lock-hint" onclick="switchTab(\'' + meta.tabName + '\')">Edit in ' + meta.label + '</button>' +
-            '<div class="amount-wrap"><span>$</span><input type="number" value="' + (amount !== undefined ? amount : '') + '" readonly tabindex="-1"></div>' +
+            '<div class="amount-wrap"><span>$</span><input type="number" value="' + (amount !== undefined ? amount : '') + '" readonly tabindex="-1" title="Open ' + meta.label + '" onclick="switchTab(\'' + meta.tabName + '\')"></div>' +
           '</div>';
       } else {
         row.innerHTML =
