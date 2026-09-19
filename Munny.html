@@ -161,18 +161,82 @@
     padding: 0 3px;
     user-select: none;
   }
-  .save-bar { display: flex; align-items: flex-start; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
+  .save-bar { display: flex; align-items: flex-start; justify-content: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
   .brand-mark {
     display: flex;
     align-items: center;
     gap: 9px;
     height: 34px;
-    margin-right: auto;
     font-family: var(--font-header);
     font-weight: 600;
     font-size: 23px;
     color: var(--ink);
   }
+  .tool-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
+  .tool-controls[hidden] { display: none; }
+  .tool-dropdown { position: relative; }
+  .tool-dropdown-toggle {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border-radius: 17px;
+    background: none;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .tool-dropdown-toggle:hover, .tool-dropdown-toggle.is-open { background: var(--paper-line); }
+  .tool-dropdown-caret {
+    font-size: 9px;
+    color: var(--ink-soft);
+    transition: transform .15s ease;
+  }
+  .tool-dropdown-toggle.is-open .tool-dropdown-caret { transform: rotate(180deg); }
+  .tool-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 160px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+    z-index: 50;
+  }
+  .tool-dropdown-menu.expanded {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .tool-dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    padding: 9px 12px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .tool-dropdown-item:hover { background: var(--paper-line); color: var(--ink); }
+  .tool-dropdown-item.active { color: var(--ink); background: var(--gold-bg); }
   .theme-dropdown { position: relative; }
   .theme-dropdown-toggle {
     height: 34px;
@@ -1104,22 +1168,35 @@
 <div class="app-shell">
   <div class="save-bar">
     <div class="brand-mark"><span>Ry's Tools</span></div>
-    <div class="theme-dropdown">
-      <button class="theme-dropdown-toggle" id="theme-dropdown-toggle" onclick="toggleSettingsPanel(event)" aria-haspopup="true" aria-expanded="false">
-        <span id="theme-dropdown-label">Dark</span>
-        <span class="theme-dropdown-caret">&#9662;</span>
+    <div class="tool-dropdown">
+      <button class="tool-dropdown-toggle" id="tool-dropdown-toggle" onclick="toggleToolMenu(event)" aria-haspopup="true" aria-expanded="false">
+        <span id="tool-dropdown-label">Budget Planner</span>
+        <span class="tool-dropdown-caret">&#9662;</span>
       </button>
-      <div class="theme-dropdown-menu" id="appearance-group" role="menu" aria-label="Appearance">
-        <button type="button" class="theme-dropdown-item" data-value="light" role="menuitemradio" onclick="setAppearance('light')">Light</button>
-        <button type="button" class="theme-dropdown-item" data-value="dark" role="menuitemradio" onclick="setAppearance('dark')">Dark</button>
-        <button type="button" class="theme-dropdown-item" data-value="elder" role="menuitemradio" onclick="setAppearance('elder')">Elder</button>
-        <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
+      <div class="tool-dropdown-menu" id="tool-menu" role="menu" aria-label="Tool">
+        <button type="button" class="tool-dropdown-item" data-value="none" role="menuitemradio" onclick="setActiveTool('none')">None</button>
+        <button type="button" class="tool-dropdown-item" data-value="budget" role="menuitemradio" onclick="setActiveTool('budget')">Budget Planner</button>
       </div>
     </div>
-    <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
-    <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
-    <span class="save-status" id="save-status"></span>
+    <div class="tool-controls" id="tool-controls">
+      <div class="theme-dropdown">
+        <button class="theme-dropdown-toggle" id="theme-dropdown-toggle" onclick="toggleSettingsPanel(event)" aria-haspopup="true" aria-expanded="false">
+          <span id="theme-dropdown-label">Dark</span>
+          <span class="theme-dropdown-caret">&#9662;</span>
+        </button>
+        <div class="theme-dropdown-menu" id="appearance-group" role="menu" aria-label="Appearance">
+          <button type="button" class="theme-dropdown-item" data-value="light" role="menuitemradio" onclick="setAppearance('light')">Light</button>
+          <button type="button" class="theme-dropdown-item" data-value="dark" role="menuitemradio" onclick="setAppearance('dark')">Dark</button>
+          <button type="button" class="theme-dropdown-item" data-value="elder" role="menuitemradio" onclick="setAppearance('elder')">Elder</button>
+          <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
+        </div>
+      </div>
+      <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
+      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
+      <span class="save-status" id="save-status"></span>
+    </div>
   </div>
+  <div id="app-content">
   <div class="signed-in-banner" id="signed-in-banner"></div>
   <div class="tab-bar">
     <div class="tabs">
@@ -1307,6 +1384,7 @@
       </div>
       <p class="footnote">This total syncs automatically into the Monthly Budget tab.</p>
     </div>
+  </div>
   </div>
 </div>
 
@@ -3160,30 +3238,74 @@
     });
   }
 
-  function toggleSettingsPanel(e) {
+  function toggleDropdown(e, toggleId, menuId) {
     if (e) e.stopPropagation();
-    const panel = document.getElementById('appearance-group');
-    const toggle = document.getElementById('theme-dropdown-toggle');
+    const panel = document.getElementById(menuId);
+    const toggle = document.getElementById(toggleId);
     if (!panel || !toggle) return;
     const isOpen = panel.classList.toggle('expanded');
     toggle.classList.toggle('is-open', isOpen);
     toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   }
 
-  function closeThemeDropdown() {
-    const panel = document.getElementById('appearance-group');
-    const toggle = document.getElementById('theme-dropdown-toggle');
+  function closeDropdown(toggleId, menuId) {
+    const panel = document.getElementById(menuId);
+    const toggle = document.getElementById(toggleId);
     if (panel) panel.classList.remove('expanded');
     if (toggle) { toggle.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
   }
 
+  function toggleSettingsPanel(e) { toggleDropdown(e, 'theme-dropdown-toggle', 'appearance-group'); }
+  function closeThemeDropdown() { closeDropdown('theme-dropdown-toggle', 'appearance-group'); }
+  function toggleToolMenu(e) { toggleDropdown(e, 'tool-dropdown-toggle', 'tool-menu'); }
+  function closeToolMenu() { closeDropdown('tool-dropdown-toggle', 'tool-menu'); }
+
   document.addEventListener('click', function (e) {
-    const panel = document.getElementById('appearance-group');
-    const wrap = document.querySelector('.theme-dropdown');
-    if (!panel || !wrap || !panel.classList.contains('expanded')) return;
-    if (wrap.contains(e.target)) return;
-    closeThemeDropdown();
+    [
+      ['theme-dropdown-toggle', 'appearance-group', '.theme-dropdown'],
+      ['tool-dropdown-toggle', 'tool-menu', '.tool-dropdown']
+    ].forEach(function (entry) {
+      const toggleId = entry[0], menuId = entry[1], wrapSelector = entry[2];
+      const panel = document.getElementById(menuId);
+      const wrap = document.querySelector(wrapSelector);
+      if (!panel || !wrap || !panel.classList.contains('expanded')) return;
+      if (wrap.contains(e.target)) return;
+      closeDropdown(toggleId, menuId);
+    });
   });
+
+  function setActiveTool(tool) {
+    if (tool !== 'none') tool = 'budget';
+    try { localStorage.setItem('munny_active_tool', tool); } catch (e) {}
+    syncToolMenu(tool);
+    applyToolVisibility(tool);
+    closeToolMenu();
+  }
+
+  function syncToolMenu(tool) {
+    const label = { none: 'None', budget: 'Budget Planner' }[tool] || 'Budget Planner';
+    const toggleLabel = document.getElementById('tool-dropdown-label');
+    if (toggleLabel) toggleLabel.textContent = label;
+    document.querySelectorAll('#tool-menu .tool-dropdown-item').forEach(function (item) {
+      const isActive = item.dataset.value === tool;
+      item.classList.toggle('active', isActive);
+      item.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    });
+  }
+
+  function applyToolVisibility(tool) {
+    const controls = document.getElementById('tool-controls');
+    const content = document.getElementById('app-content');
+    const show = tool === 'budget';
+    if (controls) controls.hidden = !show;
+    if (content) content.hidden = !show;
+  }
+
+  function currentActiveTool() {
+    let tool;
+    try { tool = localStorage.getItem('munny_active_tool'); } catch (e) {}
+    return tool === 'none' ? 'none' : 'budget';
+  }
 
   function currentAppearance() {
     let appearance;
@@ -3207,6 +3329,8 @@
     applyLoadedData(null);
     setGoogleSignedInUi(false);
     setAppearance(currentAppearance());
+    syncToolMenu(currentActiveTool());
+    applyToolVisibility(currentActiveTool());
 
     if (GoogleDriveSync.restoreSession()) {
       setGoogleSignedInUi(true);
