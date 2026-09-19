@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'&&a!=='elder'&&a!=='machina'){var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){a=s;}else{a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}}if(a==='elder'||a==='machina'){document.documentElement.setAttribute('data-skin',a);}else if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
+<script>(function(){try{var a=localStorage.getItem('munny_appearance');if(a!=='light'&&a!=='dark'&&a!=='elder'&&a!=='machina'&&a!=='copy'){var s=localStorage.getItem('munny_skin');if(s==='elder'||s==='machina'){a=s;}else{a=(localStorage.getItem('munny_theme')==='light')?'light':'dark';}}if(a==='elder'||a==='machina'||a==='copy'){document.documentElement.setAttribute('data-skin',a);}else if(a==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Munny</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;family=MedievalSharp&amp;family=IM+Fell+English&amp;family=Orbitron:wght@500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;family=MedievalSharp&amp;family=IM+Fell+English&amp;family=Orbitron:wght@500;700&amp;family=Special+Elite&amp;display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
 <style>
   :root {
@@ -78,6 +78,27 @@
     --font-mono: 'IBM Plex Mono', monospace;
     --letter-spacing-header: 0.04em;
     --bg-texture: repeating-linear-gradient(0deg, rgba(82,255,198,0.025) 0px, rgba(82,255,198,0.025) 1px, transparent 1px, transparent 3px);
+  }
+  :root[data-skin="copy"] {
+    --paper: #D9D3BF;
+    --paper-line: #C2BB9F;
+    --ink: #2B2B29;
+    --ink-soft: #6B6558;
+    --income: #3C5A3E;
+    --income-bg: #CBC8AA;
+    --expense: #8A1F1F;
+    --expense-bg: #D6C4AD;
+    --gold: #8A1F1F;
+    --gold-bg: #D3C1A9;
+    --danger: #8A1F1F;
+    --font-header: 'Special Elite', monospace;
+    --font-body: 'Special Elite', monospace;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --letter-spacing-header: 0.02em;
+    --bg-texture:
+      repeating-linear-gradient(178deg, rgba(43,43,41,0.025) 0px, rgba(43,43,41,0.025) 1px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse at 30% 20%, rgba(43,43,41,0.05), transparent 60%),
+      radial-gradient(ellipse at 75% 85%, rgba(43,43,41,0.05), transparent 55%);
   }
   * { box-sizing: border-box; }
   body {
@@ -1028,6 +1049,7 @@
   }
   [data-skin="machina"] .tab-btn.active { box-shadow: 0 0 10px rgba(82,255,198,0.35); }
   [data-skin="machina"] .tab-btn { padding: 9px 13px 9px; font-size: 13px; letter-spacing: -0.02em; }
+  [data-skin="copy"] .tab-btn { padding: 9px 13px 9px; font-size: 13px; }
   [data-skin="machina"] .primary-toggle input[type="checkbox"] {
     appearance: none;
     -webkit-appearance: none;
@@ -1047,6 +1069,12 @@
     border-color: #FF4470;
     box-shadow: 0 0 4px 1px #FF4470, 0 0 10px 3px rgba(255,68,112,0.7), inset 0 0 2px rgba(255,255,255,0.5);
   }
+  [data-skin="copy"] h1 { text-transform: uppercase; }
+  [data-skin="copy"] .col-head-cell.is-primary,
+  [data-skin="copy"] .row.locked {
+    outline: 1.5px dashed var(--gold);
+    outline-offset: -3px;
+  }
 </style>
 </head>
 <body>
@@ -1059,6 +1087,7 @@
       <label class="appearance-option"><input type="radio" name="appearance" value="dark" onchange="setAppearance('dark')">Dark</label>
       <label class="appearance-option"><input type="radio" name="appearance" value="elder" onchange="setAppearance('elder')">Elder</label>
       <label class="appearance-option"><input type="radio" name="appearance" value="machina" onchange="setAppearance('machina')">Machina</label>
+      <label class="appearance-option"><input type="radio" name="appearance" value="copy" onchange="setAppearance('copy')">Copy</label>
     </div>
     <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
     <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
@@ -3058,7 +3087,7 @@
   }
 
   function setAppearance(appearance) {
-    if (appearance === 'elder' || appearance === 'machina') {
+    if (appearance === 'elder' || appearance === 'machina' || appearance === 'copy') {
       document.documentElement.setAttribute('data-skin', appearance);
       document.documentElement.removeAttribute('data-theme');
     } else if (appearance === 'dark') {
@@ -3081,7 +3110,7 @@
   function currentAppearance() {
     let appearance;
     try { appearance = localStorage.getItem('munny_appearance'); } catch (e) {}
-    if (appearance === 'light' || appearance === 'dark' || appearance === 'elder' || appearance === 'machina') {
+    if (appearance === 'light' || appearance === 'dark' || appearance === 'elder' || appearance === 'machina' || appearance === 'copy') {
       return appearance;
     }
     // Migrate from the older separate dark-mode / skin toggles, if present.
