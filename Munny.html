@@ -6,6 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Sans+Pro:wght@400;600&amp;display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async="" defer=""></script>
 <style>
   :root {
     --paper: #F6F4EC;
@@ -918,6 +919,7 @@
     <div class="save-bar">
       <button class="save-btn" onclick="saveApp()">Save</button>
       <button class="save-btn export-btn" onclick="exportPdf()">Export PDF</button>
+      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
       <span class="save-status" id="save-status"></span>
     </div>
   </div>
@@ -2694,116 +2696,130 @@
   })();
 
   /* ================= GitHub sync (namespaced) ================= */
-  const GithubSync = (function () {
-    // Personal-use-only app: the token is scoped to nothing but the private
-    // afbrh/munny-data repo (Contents: read/write). It's never committed to source
-    // (GitHub's own push protection refuses that) — it lives only in this browser's
-    // local storage, set once via a quiet prompt the first time Save is used.
-    const OWNER = 'afbrh';
-    const REPO = 'munny-data';
-    const PATH = 'data.json';
-    const BRANCH = 'main';
-    const TOKEN_KEY = 'munny_github_token';
-    let cachedSha = null;
+  const GoogleDriveSync = (function () {
+    // Client IDs are meant to be public (unlike API tokens) — the real gate is the
+    // Google sign-in + consent screen each user goes through, not a hidden secret.
+    const CLIENT_ID = 'c575902569700-4l05lkmf0kbrgq5kdr58canigcvafv3j.apps.googleusercontent.com';
+    const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+    const FILE_NAME = 'munny-data.json';
+    const FILE_ID_KEY = 'munny_drive_file_id';
 
-    function getToken() {
-      try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
+    let tokenClient = null;
+    let accessToken = null;
+
+    function getCachedFileId() {
+      try { return localStorage.getItem(FILE_ID_KEY) || ''; } catch (e) { return ''; }
+    }
+    function setCachedFileId(id) {
+      try {
+        if (id) localStorage.setItem(FILE_ID_KEY, id);
+        else localStorage.removeItem(FILE_ID_KEY);
+      } catch (e) {}
     }
 
-    function ensureToken() {
-      let token = getToken();
-      if (!token) {
-        token = (window.prompt('Paste your GitHub token to enable saving (stored only in this browser):') || '').trim();
-        if (token) {
-          try { localStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+    function isSignedIn() {
+      return !!accessToken;
+    }
+
+    function signIn() {
+      return new Promise((resolve, reject) => {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('Google sign-in script hasn\'t loaded yet — try again in a moment.'));
+          return;
         }
+        if (!tokenClient) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPE,
+            callback: () => {} // replaced per-request below
+          });
+        }
+        tokenClient.callback = (resp) => {
+          if (resp.error) { reject(new Error(resp.error)); return; }
+          accessToken = resp.access_token;
+          resolve(accessToken);
+        };
+        tokenClient.requestAccessToken({ prompt: '' });
+      });
+    }
+
+    async function api(url, options) {
+      if (!accessToken) throw new Error('not signed in');
+      const headers = Object.assign({ 'Authorization': 'Bearer ' + accessToken }, (options && options.headers) || {});
+      return fetch(url, Object.assign({ cache: 'no-store' }, options, { headers }));
+    }
+
+    async function findFileId() {
+      const cached = getCachedFileId();
+      if (cached) return cached;
+      const q = encodeURIComponent("name='" + FILE_NAME + "' and trashed=false");
+      const resp = await api('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&spaces=drive');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      if (json.files && json.files.length) {
+        setCachedFileId(json.files[0].id);
+        return json.files[0].id;
       }
-      return token;
+      return null;
     }
 
-    function forgetToken() {
-      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
-    }
-
-    function b64EncodeUnicode(str) {
-      return btoa(unescape(encodeURIComponent(str)));
-    }
-
-    function b64DecodeUnicode(str) {
-      return decodeURIComponent(escape(atob(str.replace(/\n/g, ''))));
-    }
-
-    async function api(path, options, token) {
-      const headers = Object.assign(
-        { 'Accept': 'application/vnd.github+json' },
-        token ? { 'Authorization': 'Bearer ' + token } : {},
-        (options && options.headers) || {}
-      );
-      // GitHub's Contents API sends Cache-Control: max-age=60 on GETs, which makes the
-      // browser silently reuse a stale copy — always bypass the cache so Load actually loads.
-      return fetch('https://api.github.com' + path, Object.assign({ cache: 'no-store' }, options, { headers }));
+    async function createFile(dataObj) {
+      const metadata = { name: FILE_NAME, mimeType: 'application/json' };
+      const boundary = 'munnyboundary' + Date.now();
+      const body =
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) + '\r\n' +
+        '--' + boundary + '\r\n' +
+        'Content-Type: application/json\r\n\r\n' +
+        JSON.stringify(dataObj, null, 2) + '\r\n' +
+        '--' + boundary + '--';
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
+        body
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      setCachedFileId(json.id);
+      return json.id;
     }
 
     async function load() {
-      const token = getToken();
-      if (!token) return null; // never connected yet — caller falls back to this page's embedded data
-      const resp = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH + '?ref=' + BRANCH, {}, token);
+      if (!accessToken) return null;
+      const fileId = await findFileId();
+      if (!fileId) return null;
+      const resp = await api('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media');
       if (resp.status === 404) {
-        cachedSha = null;
+        setCachedFileId('');
         return null;
       }
-      if (resp.status === 401 || resp.status === 403) {
-        forgetToken(); // stored token no longer works — next Save will prompt fresh
-        throw new Error('token rejected (' + resp.status + ')');
-      }
-      if (!resp.ok) {
-        throw new Error('HTTP ' + resp.status);
-      }
-      const json = await resp.json();
-      cachedSha = json.sha;
-      return JSON.parse(b64DecodeUnicode(json.content));
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
     }
 
     async function save(dataObj) {
-      const token = ensureToken();
-      if (!token) throw new Error('cancelled — no token entered');
-
-      // If we haven't loaded under this token yet this session, fetch the current sha
-      // first (a create-vs-update PUT needs it, or GitHub rejects it as a conflict).
-      if (cachedSha === null) {
-        const existing = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH + '?ref=' + BRANCH, {}, token);
-        if (existing.ok) {
-          const existingJson = await existing.json();
-          cachedSha = existingJson.sha;
-        } else if (existing.status === 401 || existing.status === 403) {
-          forgetToken();
-          throw new Error('token rejected (' + existing.status + ')');
-        } else if (existing.status !== 404) {
-          throw new Error('HTTP ' + existing.status);
-        }
+      if (!accessToken) throw new Error('not signed in');
+      let fileId = getCachedFileId() || await findFileId();
+      if (!fileId) {
+        await createFile(dataObj);
+        return true;
       }
-
-      const body = {
-        message: 'Update Munny data — ' + new Date().toISOString(),
-        content: b64EncodeUnicode(JSON.stringify(dataObj, null, 2)),
-        branch: BRANCH
-      };
-      if (cachedSha) body.sha = cachedSha;
-      const resp = await api('/repos/' + OWNER + '/' + REPO + '/contents/' + PATH, {
-        method: 'PUT',
-        body: JSON.stringify(body)
-      }, token);
-      if (!resp.ok) {
-        const errBody = await resp.json().catch(() => ({}));
-        if (resp.status === 401 || resp.status === 403) forgetToken();
-        throw new Error((errBody && errBody.message) || ('HTTP ' + resp.status));
+      const resp = await api('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataObj, null, 2)
+      });
+      if (resp.status === 404) {
+        setCachedFileId('');
+        await createFile(dataObj);
+        return true;
       }
-      const json = await resp.json();
-      cachedSha = json.content && json.content.sha;
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
       return true;
     }
 
-    return { load, save };
+    return { isSignedIn, signIn, load, save };
   })();
 
   /* ================= combined save / load ================= */
@@ -2811,18 +2827,50 @@
     return { budget: BudgetApp.getState(), income: IncomeApp.getState(), mortgage: MortgageApp.getState(), food: FoodApp.getState(), car: CarApp.getState(), utilities: UtilitiesApp.getState(), savings: SavingsApp.getState(), subscriptions: SubscriptionsApp.getState() };
   }
 
-  async function saveApp() {
+  function setGoogleSignedInUi(signedIn) {
+    const btn = document.getElementById('google-signin-btn');
+    if (btn) btn.hidden = signedIn;
+  }
+
+  async function handleGoogleSignIn() {
     const status = document.getElementById('save-status');
     status.style.color = 'var(--gold)';
-    status.textContent = 'Saving to GitHub…';
+    status.textContent = 'Signing in to Google…';
     try {
-      await GithubSync.save(collectAllData());
+      await GoogleDriveSync.signIn();
+      setGoogleSignedInUi(true);
+      status.textContent = 'Loading your data from Drive…';
+      const remote = await GoogleDriveSync.load();
+      if (remote) {
+        applyLoadedData(remote);
+      } else {
+        await GoogleDriveSync.save(collectAllData());
+      }
       status.style.color = 'var(--income)';
-      status.textContent = 'Saved to GitHub';
+      status.textContent = 'Signed in to Google Drive';
       setTimeout(() => { status.textContent = ''; }, 3000);
     } catch (e) {
       status.style.color = 'var(--expense)';
-      status.textContent = 'GitHub save failed: ' + e.message;
+      status.textContent = 'Google sign-in failed: ' + e.message;
+    }
+  }
+
+  async function saveApp() {
+    const status = document.getElementById('save-status');
+    status.style.color = 'var(--gold)';
+    status.textContent = 'Saving to Google Drive…';
+    try {
+      if (!GoogleDriveSync.isSignedIn()) {
+        await GoogleDriveSync.signIn();
+        setGoogleSignedInUi(true);
+      }
+      await GoogleDriveSync.save(collectAllData());
+      status.style.color = 'var(--income)';
+      status.textContent = 'Saved to Google Drive';
+      setTimeout(() => { status.textContent = ''; }, 3000);
+    } catch (e) {
+      status.style.color = 'var(--expense)';
+      status.textContent = 'Google Drive save failed: ' + e.message;
     }
   }
 
@@ -2924,20 +2972,12 @@
     }
   }
 
-  async function loadApp() {
-    // GitHub (afbrh/munny-data) is always the source of truth — fall back to
-    // whatever's embedded in this page only if the GitHub request itself fails.
-    const status = document.getElementById('save-status');
-    try {
-      const remote = await GithubSync.load();
-      applyLoadedData(remote || readEmbeddedData());
-    } catch (e) {
-      applyLoadedData(readEmbeddedData());
-      if (status) {
-        status.style.color = 'var(--expense)';
-        status.textContent = 'Could not load from GitHub (' + e.message + ') — showing this page\'s last local save instead.';
-      }
-    }
+  function loadApp() {
+    // Google's sign-in popup needs a real click, so it can't happen automatically on
+    // page load — show this page's last-saved snapshot first; clicking "Sign in with
+    // Google" (or Save) pulls/pushes the real thing via Drive.
+    applyLoadedData(readEmbeddedData());
+    setGoogleSignedInUi(false);
   }
 
   loadApp();
