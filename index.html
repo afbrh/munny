@@ -1194,7 +1194,7 @@
     </div>
     <div class="tool-controls" id="tool-controls">
       <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
-      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
+      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Google Sign-In</button>
       <span class="save-status" id="save-status"></span>
     </div>
   </div>
@@ -3137,6 +3137,7 @@
     const saveBtn = document.getElementById('save-btn');
     if (signinBtn) signinBtn.hidden = signedIn;
     if (saveBtn) saveBtn.hidden = !signedIn;
+    updateDropdownLabelFit();
   }
 
   async function showSignedInBanner() {
@@ -3231,19 +3232,37 @@
   }
 
   // Shrinks the tool/theme dropdown toggle labels to a single initial only when the
-  // current label text would otherwise force the theme dropdown onto a new line —
-  // re-checked whenever a label's text changes or the window resizes, never a fixed
-  // viewport breakpoint (shorter label combos keep their full words much longer).
+  // current label text — plus the Save/Google Sign-In buttons, which can't shrink —
+  // would otherwise force something onto a new line. Re-checked whenever a label's
+  // text changes or the window resizes, never a fixed viewport breakpoint (shorter
+  // label combos keep their full words much longer). Prefers full labels whenever
+  // everything already fits on one row, and only shrinks when doing so actually
+  // frees up enough room to get everything back onto a single row.
   function updateDropdownLabelFit() {
     const saveBar = document.querySelector('.save-bar');
     const toolDropdown = document.querySelector('.tool-dropdown');
     const themeDropdown = document.querySelector('.theme-dropdown');
+    const toolControls = document.getElementById('tool-controls');
     if (!saveBar || !toolDropdown || !themeDropdown) return;
+
+    function rowTops() {
+      const els = [toolDropdown, themeDropdown];
+      if (toolControls && !toolControls.hidden) els.push(toolControls);
+      return els.map(function (el) { return Math.round(el.getBoundingClientRect().top); });
+    }
+
+    function sameRow(tops) {
+      return tops.every(function (t) { return t === tops[0]; });
+    }
+
     saveBar.classList.remove('labels-short');
-    const toolTop = Math.round(toolDropdown.getBoundingClientRect().top);
-    const themeTop = Math.round(themeDropdown.getBoundingClientRect().top);
-    if (themeTop !== toolTop) {
-      saveBar.classList.add('labels-short');
+    if (sameRow(rowTops())) return;
+
+    saveBar.classList.add('labels-short');
+    if (!sameRow(rowTops())) {
+      // Shrinking the labels didn't free up enough room anyway (the buttons are the
+      // bottleneck), so keep the full, more readable labels instead of shrinking for no benefit.
+      saveBar.classList.remove('labels-short');
     }
   }
 
@@ -3252,6 +3271,14 @@
     clearTimeout(dropdownLabelFitResizeTimer);
     dropdownLabelFitResizeTimer = setTimeout(updateDropdownLabelFit, 100);
   });
+
+  // save-status text length varies a lot (sign-in progress, errors, "Saved to Google
+  // Drive", etc.) and can itself push tool-controls onto a new line, so watch it
+  // directly instead of re-checking fit at every call site that sets its text.
+  const saveStatusEl = document.getElementById('save-status');
+  if (saveStatusEl && window.MutationObserver) {
+    new MutationObserver(updateDropdownLabelFit).observe(saveStatusEl, { characterData: true, childList: true, subtree: true });
+  }
 
   function syncAppearanceRadios(appearance) {
     const label = { light: 'Light', dark: 'Dark', elder: 'Elder', machina: 'Machina' }[appearance] || 'Dark';
@@ -3333,6 +3360,7 @@
     if (controls) controls.hidden = !show;
     if (headerTabs) headerTabs.hidden = !show;
     if (content) content.hidden = !show;
+    updateDropdownLabelFit();
   }
 
   function currentActiveTool() {
