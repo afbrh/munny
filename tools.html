@@ -239,6 +239,9 @@
   }
   .tool-dropdown-item:hover { background: var(--paper-line); color: var(--ink); }
   .tool-dropdown-item.active { color: var(--ink); background: var(--gold-bg); }
+  .dropdown-label-short { display: none; }
+  .save-bar.labels-short .dropdown-label-full { display: none; }
+  .save-bar.labels-short .dropdown-label-short { display: inline; }
   .theme-dropdown { position: relative; }
   .theme-dropdown-toggle {
     height: 34px;
@@ -1167,7 +1170,8 @@
     <div class="brand-mark"><span>Ry's Tools</span></div>
     <div class="tool-dropdown">
       <button class="tool-dropdown-toggle" id="tool-dropdown-toggle" onclick="toggleToolMenu(event)" aria-haspopup="true" aria-expanded="false">
-        <span id="tool-dropdown-label">Budget Planner</span>
+        <span id="tool-dropdown-label" class="dropdown-label-full">Budget Planner</span>
+        <span id="tool-dropdown-label-short" class="dropdown-label-short" aria-hidden="true">B</span>
         <span class="tool-dropdown-caret">&#9662;</span>
       </button>
       <div class="tool-dropdown-menu" id="tool-menu" role="menu" aria-label="Tool">
@@ -1177,7 +1181,8 @@
     </div>
     <div class="theme-dropdown">
       <button class="theme-dropdown-toggle" id="theme-dropdown-toggle" onclick="toggleSettingsPanel(event)" aria-haspopup="true" aria-expanded="false">
-        <span id="theme-dropdown-label">Dark</span>
+        <span id="theme-dropdown-label" class="dropdown-label-full">Dark</span>
+        <span id="theme-dropdown-label-short" class="dropdown-label-short" aria-hidden="true">D</span>
         <span class="theme-dropdown-caret">&#9662;</span>
       </button>
       <div class="theme-dropdown-menu" id="appearance-group" role="menu" aria-label="Appearance">
@@ -3225,10 +3230,36 @@
     closeThemeDropdown();
   }
 
+  // Shrinks the tool/theme dropdown toggle labels to a single initial only when the
+  // current label text would otherwise force the theme dropdown onto a new line —
+  // re-checked whenever a label's text changes or the window resizes, never a fixed
+  // viewport breakpoint (shorter label combos keep their full words much longer).
+  function updateDropdownLabelFit() {
+    const saveBar = document.querySelector('.save-bar');
+    const toolDropdown = document.querySelector('.tool-dropdown');
+    const themeDropdown = document.querySelector('.theme-dropdown');
+    if (!saveBar || !toolDropdown || !themeDropdown) return;
+    saveBar.classList.remove('labels-short');
+    const toolTop = Math.round(toolDropdown.getBoundingClientRect().top);
+    const themeTop = Math.round(themeDropdown.getBoundingClientRect().top);
+    if (themeTop !== toolTop) {
+      saveBar.classList.add('labels-short');
+    }
+  }
+
+  let dropdownLabelFitResizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(dropdownLabelFitResizeTimer);
+    dropdownLabelFitResizeTimer = setTimeout(updateDropdownLabelFit, 100);
+  });
+
   function syncAppearanceRadios(appearance) {
     const label = { light: 'Light', dark: 'Dark', elder: 'Elder', machina: 'Machina' }[appearance] || 'Dark';
     const toggleLabel = document.getElementById('theme-dropdown-label');
     if (toggleLabel) toggleLabel.textContent = label;
+    const toggleLabelShort = document.getElementById('theme-dropdown-label-short');
+    if (toggleLabelShort) toggleLabelShort.textContent = label.charAt(0);
+    updateDropdownLabelFit();
     document.querySelectorAll('.theme-dropdown-item').forEach(function (item) {
       const isActive = item.dataset.value === appearance;
       item.classList.toggle('active', isActive);
@@ -3284,6 +3315,9 @@
     const label = { none: 'None', budget: 'Budget Planner' }[tool] || 'Budget Planner';
     const toggleLabel = document.getElementById('tool-dropdown-label');
     if (toggleLabel) toggleLabel.textContent = label;
+    const toggleLabelShort = document.getElementById('tool-dropdown-label-short');
+    if (toggleLabelShort) toggleLabelShort.textContent = label.charAt(0);
+    updateDropdownLabelFit();
     document.querySelectorAll('#tool-menu .tool-dropdown-item').forEach(function (item) {
       const isActive = item.dataset.value === tool;
       item.classList.toggle('active', isActive);
