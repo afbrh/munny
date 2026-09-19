@@ -36,7 +36,6 @@
   .tab-bar {
     display: flex;
     align-items: flex-end;
-    justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 28px;
@@ -77,7 +76,7 @@
     padding-bottom: 11px;
     cursor: default;
   }
-  .save-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; margin-left: auto; }
+  .save-bar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
   .save-btn {
     background: var(--ink);
     color: var(--paper);
@@ -912,6 +911,13 @@
 <script id="saved-data" type="application/json"></script>
 
 <div class="app-shell">
+  <div class="save-bar">
+    <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
+    <button class="save-btn export-btn" id="export-pdf-btn" onclick="exportPdf()" hidden="">Export PDF</button>
+    <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
+    <span class="save-status" id="save-status"></span>
+  </div>
+  <div class="signed-in-banner" id="signed-in-banner"></div>
   <div class="tab-bar">
     <div class="tabs">
       <button class="tab-btn" data-tab="budget" onclick="switchTab('budget')">Monthly Budget</button>
@@ -923,14 +929,7 @@
       <button class="tab-btn" data-tab="savings" onclick="switchTab('savings')">Savings</button>
       <button class="tab-btn" data-tab="subscriptions" onclick="switchTab('subscriptions')">Subs</button>
     </div>
-    <div class="save-bar">
-      <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
-      <button class="save-btn export-btn" id="export-pdf-btn" onclick="exportPdf()" hidden="">Export PDF</button>
-      <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
-      <span class="save-status" id="save-status"></span>
-    </div>
   </div>
-  <div class="signed-in-banner" id="signed-in-banner"></div>
 
 
   <div id="print-report"></div>
