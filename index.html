@@ -174,14 +174,43 @@
     color: var(--ink);
   }
   .brand-mark img { width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0; }
+  .settings-wrap { display: flex; align-items: center; gap: 10px; }
+  .settings-toggle {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    background: none;
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .settings-toggle:hover, .settings-toggle.is-open { background: var(--paper-line); }
   .appearance-group {
     display: flex;
     align-items: center;
     gap: 14px;
     height: 34px;
-    padding: 0 16px;
+    padding: 0;
     border-radius: 17px;
-    border: 1.5px solid var(--ink);
+    border: 1.5px solid transparent;
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width .25s ease, opacity .18s ease, padding .25s ease, border-color .18s ease;
+  }
+  .appearance-group.expanded {
+    max-width: 420px;
+    padding: 0 16px;
+    border-color: var(--ink);
+    opacity: 1;
   }
   .appearance-option {
     display: flex;
@@ -1067,11 +1096,14 @@
 <div class="app-shell">
   <div class="save-bar">
     <div class="brand-mark"><img src="logo.png" alt="Ry's Tools" width="28" height="28"><span>Ry's Tools</span></div>
-    <div class="appearance-group" role="radiogroup" aria-label="Appearance">
-      <label class="appearance-option"><input type="radio" name="appearance" value="light" onchange="setAppearance('light')">Light</label>
-      <label class="appearance-option"><input type="radio" name="appearance" value="dark" onchange="setAppearance('dark')">Dark</label>
-      <label class="appearance-option"><input type="radio" name="appearance" value="elder" onchange="setAppearance('elder')">Elder</label>
-      <label class="appearance-option"><input type="radio" name="appearance" value="machina" onchange="setAppearance('machina')">Machina</label>
+    <div class="settings-wrap">
+      <div class="appearance-group" id="appearance-group" role="radiogroup" aria-label="Appearance">
+        <label class="appearance-option"><input type="radio" name="appearance" value="light" onchange="setAppearance('light')">Light</label>
+        <label class="appearance-option"><input type="radio" name="appearance" value="dark" onchange="setAppearance('dark')">Dark</label>
+        <label class="appearance-option"><input type="radio" name="appearance" value="elder" onchange="setAppearance('elder')">Elder</label>
+        <label class="appearance-option"><input type="radio" name="appearance" value="machina" onchange="setAppearance('machina')">Machina</label>
+      </div>
+      <button class="settings-toggle" id="settings-toggle" onclick="toggleSettingsPanel(event)" aria-label="Theme settings" title="Theme settings" aria-expanded="false">&#9881;</button>
     </div>
     <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
     <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
@@ -3109,6 +3141,26 @@
     const radio = document.querySelector('input[name="appearance"][value="' + appearance + '"]');
     if (radio) radio.checked = true;
   }
+
+  function toggleSettingsPanel(e) {
+    if (e) e.stopPropagation();
+    const panel = document.getElementById('appearance-group');
+    const toggle = document.getElementById('settings-toggle');
+    if (!panel || !toggle) return;
+    const isOpen = panel.classList.toggle('expanded');
+    toggle.classList.toggle('is-open', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  document.addEventListener('click', function (e) {
+    const panel = document.getElementById('appearance-group');
+    const wrap = document.querySelector('.settings-wrap');
+    if (!panel || !wrap || !panel.classList.contains('expanded')) return;
+    if (wrap.contains(e.target)) return;
+    panel.classList.remove('expanded');
+    const toggle = document.getElementById('settings-toggle');
+    if (toggle) { toggle.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
+  });
 
   function currentAppearance() {
     let appearance;
