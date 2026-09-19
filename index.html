@@ -174,60 +174,69 @@
     color: var(--ink);
   }
   .brand-mark img { width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0; }
-  .settings-wrap { display: flex; align-items: center; gap: 10px; }
-  .settings-toggle {
-    flex-shrink: 0;
-    width: 34px;
+  .theme-dropdown { position: relative; }
+  .theme-dropdown-toggle {
     height: 34px;
-    padding: 0;
-    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border-radius: 17px;
     background: none;
     border: 1.5px solid var(--ink);
     color: var(--ink);
-    font-size: 20px;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
   }
-  .settings-toggle:hover, .settings-toggle.is-open { background: var(--paper-line); }
-  .appearance-group {
+  .theme-dropdown-toggle:hover, .theme-dropdown-toggle.is-open { background: var(--paper-line); }
+  .theme-dropdown-caret {
+    font-size: 9px;
+    color: var(--ink-soft);
+    transition: transform .15s ease;
+  }
+  .theme-dropdown-toggle.is-open .theme-dropdown-caret { transform: rotate(180deg); }
+  .theme-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 150px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 6px;
     display: flex;
-    align-items: center;
-    gap: 14px;
-    height: 34px;
-    padding: 0;
-    border-radius: 17px;
-    border: 1.5px solid transparent;
-    max-width: 0;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.2);
     opacity: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    transition: max-width .25s ease, opacity .18s ease, padding .25s ease, border-color .18s ease;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+    z-index: 50;
   }
-  .appearance-group.expanded {
-    max-width: 420px;
-    padding: 0 16px;
-    border-color: var(--ink);
+  .theme-dropdown-menu.expanded {
     opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
   }
-  .appearance-option {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+  .theme-dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    padding: 9px 12px;
     font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
     color: var(--ink-soft);
     cursor: pointer;
   }
-  .appearance-option input {
-    margin: 0;
-    cursor: pointer;
-    accent-color: var(--gold);
-  }
-  .appearance-option:has(input:checked) { color: var(--ink); }
+  .theme-dropdown-item:hover { background: var(--paper-line); color: var(--ink); }
+  .theme-dropdown-item.active { color: var(--ink); background: var(--gold-bg); }
   .save-btn {
     height: 34px;
     display: inline-flex;
@@ -1096,14 +1105,17 @@
 <div class="app-shell">
   <div class="save-bar">
     <div class="brand-mark"><img src="logo.png" alt="Ry's Tools" width="28" height="28"><span>Ry's Tools</span></div>
-    <div class="settings-wrap">
-      <div class="appearance-group" id="appearance-group" role="radiogroup" aria-label="Appearance">
-        <label class="appearance-option"><input type="radio" name="appearance" value="light" onchange="setAppearance('light')">Light</label>
-        <label class="appearance-option"><input type="radio" name="appearance" value="dark" onchange="setAppearance('dark')">Dark</label>
-        <label class="appearance-option"><input type="radio" name="appearance" value="elder" onchange="setAppearance('elder')">Elder</label>
-        <label class="appearance-option"><input type="radio" name="appearance" value="machina" onchange="setAppearance('machina')">Machina</label>
+    <div class="theme-dropdown">
+      <button class="theme-dropdown-toggle" id="theme-dropdown-toggle" onclick="toggleSettingsPanel(event)" aria-haspopup="true" aria-expanded="false">
+        <span id="theme-dropdown-label">Dark</span>
+        <span class="theme-dropdown-caret">&#9662;</span>
+      </button>
+      <div class="theme-dropdown-menu" id="appearance-group" role="menu" aria-label="Appearance">
+        <button type="button" class="theme-dropdown-item" data-value="light" role="menuitemradio" onclick="setAppearance('light')">Light</button>
+        <button type="button" class="theme-dropdown-item" data-value="dark" role="menuitemradio" onclick="setAppearance('dark')">Dark</button>
+        <button type="button" class="theme-dropdown-item" data-value="elder" role="menuitemradio" onclick="setAppearance('elder')">Elder</button>
+        <button type="button" class="theme-dropdown-item" data-value="machina" role="menuitemradio" onclick="setAppearance('machina')">Machina</button>
       </div>
-      <button class="settings-toggle" id="settings-toggle" onclick="toggleSettingsPanel(event)" aria-label="Theme settings" title="Theme settings" aria-expanded="false">&#9881;</button>
     </div>
     <button class="save-btn" id="save-btn" onclick="saveApp()" hidden="">Save</button>
     <button class="save-btn export-btn" id="google-signin-btn" onclick="handleGoogleSignIn()">Sign in with Google</button>
@@ -3135,31 +3147,43 @@
     }
     try { localStorage.setItem('munny_appearance', appearance); } catch (e) {}
     syncAppearanceRadios(appearance);
+    closeThemeDropdown();
   }
 
   function syncAppearanceRadios(appearance) {
-    const radio = document.querySelector('input[name="appearance"][value="' + appearance + '"]');
-    if (radio) radio.checked = true;
+    const label = { light: 'Light', dark: 'Dark', elder: 'Elder', machina: 'Machina' }[appearance] || 'Dark';
+    const toggleLabel = document.getElementById('theme-dropdown-label');
+    if (toggleLabel) toggleLabel.textContent = label;
+    document.querySelectorAll('.theme-dropdown-item').forEach(function (item) {
+      const isActive = item.dataset.value === appearance;
+      item.classList.toggle('active', isActive);
+      item.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    });
   }
 
   function toggleSettingsPanel(e) {
     if (e) e.stopPropagation();
     const panel = document.getElementById('appearance-group');
-    const toggle = document.getElementById('settings-toggle');
+    const toggle = document.getElementById('theme-dropdown-toggle');
     if (!panel || !toggle) return;
     const isOpen = panel.classList.toggle('expanded');
     toggle.classList.toggle('is-open', isOpen);
     toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   }
 
+  function closeThemeDropdown() {
+    const panel = document.getElementById('appearance-group');
+    const toggle = document.getElementById('theme-dropdown-toggle');
+    if (panel) panel.classList.remove('expanded');
+    if (toggle) { toggle.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
+  }
+
   document.addEventListener('click', function (e) {
     const panel = document.getElementById('appearance-group');
-    const wrap = document.querySelector('.settings-wrap');
+    const wrap = document.querySelector('.theme-dropdown');
     if (!panel || !wrap || !panel.classList.contains('expanded')) return;
     if (wrap.contains(e.target)) return;
-    panel.classList.remove('expanded');
-    const toggle = document.getElementById('settings-toggle');
-    if (toggle) { toggle.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
+    closeThemeDropdown();
   });
 
   function currentAppearance() {
